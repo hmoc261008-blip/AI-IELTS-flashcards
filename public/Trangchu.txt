@@ -1,0 +1,6769 @@
+
+
+
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI-IELTs — Flashcards</title>
+  <style>
+    :root{--accent:#6C5CE7;--muted:#6b7280;--bg:#f8fafc}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:0;background:var(--bg);color:#111}
+    header{background:white;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 6px rgba(16,24,40,.06)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#00B4D8);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+    main{display:grid;grid-template-columns:260px 1fr;padding:20px;gap:18px}
+    .panel{background:white;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(16,24,40,.04)}
+    .topics{display:flex;flex-direction:column;gap:8px}
+    .topic{padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+    .topic.active{background:linear-gradient(90deg,var(--accent),#00B4D8);color:white}
+    .controls{display:flex;gap:8px;margin-bottom:12px}
+    .btn{padding:8px 10px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(108,92,231,.12)}
+/* Thêm hồng pastel */
+    .btn.pastel-pink {
+      background-color: #ffb6c1; /* hồng pastel */
+      color: white;
+      border: none;
+    }
+
+    .btn.pastel-pink.ghost {
+      background-color: transparent;
+      color: #ffb6c1;
+      border: 1px solid #ffb6c1;
+    }
+    .search{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .card{perspective:1000px}
+    .inner{position:relative;width:100%;min-height:140px;transform-style:preserve-3d;transition:transform .5s;cursor:pointer}
+    .inner.flipped{transform:rotateY(180deg)}
+    .face{position:absolute;inset:0;border-radius:10px;padding:14px;backface-visibility:hidden;border:1px solid rgba(16,24,40,.05);display:flex;flex-direction:column;justify-content:center}
+    .front{background:white}
+    .back{background:linear-gradient(180deg,#fff,#f7f8ff);transform:rotateY(180deg)}
+    .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:13px}
+    .small{font-size:13px;color:var(--muted)}
+    form.add{display:flex;flex-direction:column;gap:8px}
+    textarea, input[type=text]{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef}
+    footer{padding:12px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:880px){main{grid-template-columns:1fr} .panel.topics-panel{order:2}}
+  </style>
+</head>
+<body>
+  <header>
+  <div class="brand">
+    <div class="logo">
+      <img src="images/logo.jpg" alt="AI-IELTs Logo" style="width:44px; height:44px; border-radius:8px; object-fit:cover;">
+    </div>
+    <div>
+      <div style="font-weight:700">AI-IELTs Flashcards</div>
+      <div class="small">Tạo, upload và ôn từ vựng/ý tưởng cho IELTS</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <input id="globalSearch" class="search" placeholder="Tìm kiếm từ, ví dụ: environment" />
+    <button id="gotoGame" class="btn pastel-pink">Chơi Game</button>
+    <button id="gotoPractice" class="btn ghost">Luyện tập từ vựng</button>
+  </div>
+</header>
+  <main>
+    <aside class="panel topics-panel">
+      <!-- VIDEO HƯỚNG DẪN -->
+      <div style="margin-bottom:16px">
+        <strong>Hướng dẫn</strong>
+        <video controls autoplay muted style="width:100%; border-radius:12px; margin-top:8px;">
+          <source src="videos/tutorial.mp4" type="video/mp4">
+          Trình duyệt của bạn không hỗ trợ video.
+        </video>
+      </div>
+      <hr style="margin:12px 0;border:none;border-top:1px solid #eef2f7">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <strong>Chủ đề</strong>
+        <button id="newTopicBtn" class="btn ghost">+ Chủ đề</button>
+      </div>
+
+      <div class="topics" id="topicsList"></div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px solid #eef2f7">
+
+      <div style="margin-bottom:8px"><strong>Upload chủ đề (JSON)</strong></div>
+      <textarea id="uploadArea" rows="6" placeholder='Ví dụ: [{"topic":"Environment","cards":[{"front":"pollution","back":"ô nhiễm"}]}]'></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="importBtn" class="btn">Import</button>
+        <button id="sampleBtn" class="btn ghost">Mẫu</button>
+      </div>
+    </aside>
+
+    <section>
+      <div class="panel" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong id="currentTopicTitle">Tất cả flashcards</strong>
+          <div class="small" id="countInfo">0 cards</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="addCardBtn" class="btn">+ Thêm flashcard</button>
+          <button id="downloadBtn" class="btn ghost">Xuất JSON</button>
+        </div>
+      </div>
+
+      <div class="panel" id="cardsPanel">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <input id="filterKnown" type="checkbox" /> <label for="filterKnown">Ẩn đã biết</label>
+        </div>
+
+        <div id="grid" class="grid"></div>
+      </div>
+
+      <footer>Built for practice — open this HTML file in your browser. Dữ liệu lưu local (localStorage).</footer>
+    </section>
+  </main>
+
+  <!-- Modal area (simple) -->
+  <div id="modal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(2,6,23,.4);z-index:60">
+    <div style="width:96%;max-width:720px;background:white;border-radius:12px;padding:16px;box-shadow:0 20px 50px rgba(2,6,23,.4)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong id="modalTitle">Thêm flashcard</strong>
+        <button id="closeModal" class="btn ghost">Đóng</button>
+      </div>
+      <form id="cardForm" class="add">
+        <input id="cardTopic" placeholder="Chủ đề (ví dụ: Environment)" required />
+        <input id="cardFront" placeholder="Mặt trước (từ / câu hỏi)" required />
+        <textarea id="cardBack" rows="4" placeholder="Mặt sau (nghĩa / giải thích)"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button type="submit" class="btn">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Simple data model stored in localStorage under key ai-ielts-flashcards
+    const STORAGE_KEY = 'ai-ielts-flashcards-v1'
+   let state = {
+  topics: [
+  {
+    "topic": "Social Media",
+    "cards": [
+      {
+        "id": "id_oxrnh5l",
+        "front": "reliability",
+        "back": "accuracy or trustworthiness\nExample: The reliability of that source is questionable.",
+        "known": false
+      },
+      {
+        "id": "id_majpb3o",
+        "front": "social platform",
+        "back": "online network\nExample: Many people share opinions on social platforms.",
+        "known": false
+      },
+      {
+        "id": "id_pwu0guf",
+        "front": "brand image",
+        "back": "company reputation\nExample: The brand image is key for marketing success.",
+        "known": false
+      },
+      {
+        "id": "id_wz1wb3y",
+        "front": "broadcast",
+        "back": "distribute widely\nExample: The event was broadcast live on TV.",
+        "known": false
+      },
+      {
+        "id": "id_rplaxcj",
+        "front": "influencer",
+        "back": "someone with influence\nExample: She is a famous influencer on Instagram.",
+        "known": false
+      },
+      {
+        "id": "id_ebqd4a5",
+        "front": "freshest updates",
+        "back": "latest news\nExample: The site provides the freshest updates.",
+        "known": false
+      },
+      {
+        "id": "id_kl17fge",
+        "front": "celebrity endorsement",
+        "back": "promotion by celebrities\nExample: This product features celebrity endorsement.",
+        "known": false
+      },
+      {
+        "id": "id_7gyowje",
+        "front": "inappropriate content",
+        "back": "not suitable for viewing\nExample: The video was removed due to inappropriate content.",
+        "known": false
+      },
+      {
+        "id": "id_emukvf3",
+        "front": "fast-paced development",
+        "back": "rapid growth\nExample: Social media is a fast-paced industry.",
+        "known": false
+      },
+      {
+        "id": "id_4xek7ro",
+        "front": "censorship",
+        "back": "restriction of content\nExample: Censorship laws apply to many media outlets.",
+        "known": false
+      },
+      {
+        "id": "id_lml0fxk",
+        "front": "disinformation",
+        "back": "false or misleading information\nExample: Disinformation spreads easily online.",
+        "known": false
+      },
+      {
+        "id": "id_pqmthx5",
+        "front": "unique features",
+        "back": "special functions\nExample: The app offers unique features for users to facilitate communication.",
+        "known": false
+      },
+      {
+        "id": "id_99mecnz",
+        "front": "to globally connect with someone",
+        "back": "to communicate with people worldwide",
+        "known": false
+      },
+      {
+        "id": "id_cp57yfx",
+        "front": "live streaming service",
+        "back": "platform for real-time broadcasting",
+        "known": false
+      },
+      {
+        "id": "id_29mjxao",
+        "front": "a powerful communication tool",
+        "back": "very effective method of communication",
+        "known": false
+      },
+      {
+        "id": "id_qt8x4df",
+        "front": "to reunite long-lost relatives",
+        "back": "bring separated family members together",
+        "known": false
+      },
+      {
+        "id": "id_nneixbu",
+        "front": "keep myself updated",
+        "back": "stay informed with new information",
+        "known": false
+      },
+      {
+        "id": "id_hk2q07r",
+        "front": "rise as a trend",
+        "back": "become popular",
+        "known": false
+      },
+      {
+        "id": "id_jc2j4zx",
+        "front": "the risk of data breaches",
+        "back": "possibility of personal information getting exposed",
+        "known": false
+      },
+      {
+        "id": "id_dpmi9f6",
+        "front": "fall prey to online abuse",
+        "back": "be harmed or targeted online",
+        "known": false
+      },
+      {
+        "id": "id_6ak2pvx",
+        "front": "online bullying and harassment",
+        "back": "abuse or intimidation online",
+        "known": false
+      },
+      {
+        "id": "id_efb34dd",
+        "front": "a toxic environment",
+        "back": "unhealthy or harmful online space",
+        "known": false
+      },
+      {
+        "id": "id_npti89o",
+        "front": "hateful or abusive content",
+        "back": "content expressing hate or causing harm",
+        "known": false
+      },
+      {
+        "id": "id_sg65v39",
+        "front": "serious mental effects",
+        "back": "strong negative impacts on mental health",
+        "known": false
+      },
+      {
+        "id": "id_jmj9qtn",
+        "front": "to automatically track and collect data",
+        "back": "gather user information without manual action",
+        "known": false
+      },
+      {
+        "id": "id_tsxhg2u",
+        "front": "to prevent your data from getting compromised",
+        "back": "protect information from being exposed",
+        "known": false
+      },
+      {
+        "id": "id_2qe1vmn",
+        "front": "to violate someone's privacy",
+        "back": "intrude into personal information or space",
+        "known": false
+      },
+      {
+        "id": "id_i44ioi4",
+        "front": "to distort the truth",
+        "back": "change information to make it inaccurate",
+        "known": false
+      },
+      {
+        "id": "id_umjx4eb",
+        "front": "to exaggerate something",
+        "back": "make something seem bigger or more extreme",
+        "known": false
+      },
+      {
+        "id": "id_s9xwycc",
+        "front": "no news is good news",
+        "back": "silence can be a relief",
+        "known": false
+      },
+      {
+        "id": "id_2rzu62m",
+        "front": "jump on the bandwagon",
+        "back": "follow a trend",
+        "known": false
+      },
+      {
+        "id": "id_el5vzsv",
+        "front": "back to the drawing board",
+        "back": "start over",
+        "known": false
+      },
+      {
+        "id": "id_cd0zjby",
+        "front": "a flash in the pan",
+        "back": "short-lived success",
+        "known": false
+      },
+      {
+        "id": "id_5xnrc06",
+        "front": "get your wires crossed",
+        "back": "misunderstand something",
+        "known": false
+      },
+      {
+        "id": "id_o5xm69n",
+        "front": "catch the latest scoop",
+        "back": "get the newest news",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Education",
+    "cards": [
+      {
+        "id": "id_tmuybog",
+        "front": "Kindergarten",
+        "back": "Trường mầm non",
+        "known": false
+      },
+      {
+        "id": "id_hidr1v8",
+        "front": "Primary school",
+        "back": "Trường cấp 1",
+        "known": false
+      },
+      {
+        "id": "id_3nmm58j",
+        "front": "Pre-school education",
+        "back": "Giáo dục mầm non",
+        "known": false
+      },
+      {
+        "id": "id_phvtgn6",
+        "front": "Secondary school",
+        "back": "Trường cấp 2",
+        "known": false
+      },
+      {
+        "id": "id_bnxh7zf",
+        "front": "High school",
+        "back": "Trường trung học phổ thông",
+        "known": false
+      },
+      {
+        "id": "id_z57702w",
+        "front": "Boarding school",
+        "back": "Trường nội trú",
+        "known": false
+      },
+      {
+        "id": "id_omgk60a",
+        "front": "Private school",
+        "back": "Trường tư thục",
+        "known": false
+      },
+      {
+        "id": "id_6przi9t",
+        "front": "Math",
+        "back": "Toán học",
+        "known": false
+      },
+      {
+        "id": "id_a1msrkc",
+        "front": "Literature",
+        "back": "Ngữ văn",
+        "known": false
+      },
+      {
+        "id": "id_eardneq",
+        "front": "English",
+        "back": "Tiếng Anh",
+        "known": false
+      },
+      {
+        "id": "id_3f0f1zo",
+        "front": "Physics",
+        "back": "Vật lý",
+        "known": false
+      },
+      {
+        "id": "id_wzlankd",
+        "front": "Chemistry",
+        "back": "Hóa học",
+        "known": false
+      },
+      {
+        "id": "id_uxenxj0",
+        "front": "Biology",
+        "back": "Sinh học",
+        "known": false
+      },
+      {
+        "id": "id_8v0j4h0",
+        "front": "Geography",
+        "back": "Địa lý",
+        "known": false
+      },
+      {
+        "id": "id_cys71yw",
+        "front": "History",
+        "back": "Lịch sử",
+        "known": false
+      },
+      {
+        "id": "id_iu9zfr3",
+        "front": "Art",
+        "back": "Nghệ thuật",
+        "known": false
+      },
+      {
+        "id": "id_g1vk8e4",
+        "front": "Physical Education (PE)",
+        "back": "Thể dục",
+        "known": false
+      },
+      {
+        "id": "id_h1k9z2y",
+        "front": "Civil education",
+        "back": "Giáo dục công dân",
+        "known": false
+      },
+      {
+        "id": "id_7xn9rzw",
+        "front": "To learn by heart",
+        "back": "Học thuộc lòng",
+        "known": false
+      },
+      {
+        "id": "id_nrtgcsd",
+        "front": "To deliver a lecture",
+        "back": "Giảng bài",
+        "known": false
+      },
+      {
+        "id": "id_ihjfgab",
+        "front": "To get higher academic results",
+        "back": "Đạt được kết quả học tập cao",
+        "known": false
+      },
+      {
+        "id": "id_ucryxvv",
+        "front": "Pass with flying colors",
+        "back": "Hoàn thành bài kiểm tra với điểm cao",
+        "known": false
+      },
+      {
+        "id": "id_xt2yrta",
+        "front": "College",
+        "back": "Cao đẳng",
+        "known": false
+      },
+      {
+        "id": "id_bjn8ni3",
+        "front": "Undergraduate",
+        "back": "Sinh viên đại học / bậc cử nhân",
+        "known": false
+      },
+      {
+        "id": "id_kbu5l5n",
+        "front": "Post-graduate school",
+        "back": "Học sau đại học",
+        "known": false
+      },
+      {
+        "id": "id_h6ajx5j",
+        "front": "BA/BSs",
+        "back": "Bằng cử nhân Nghệ thuật / Khoa học",
+        "known": false
+      },
+      {
+        "id": "id_r88ra6u",
+        "front": "MA/MSc",
+        "back": "Thạc sĩ Nghệ thuật / Khoa học",
+        "known": false
+      },
+      {
+        "id": "id_xn8dcxi",
+        "front": "PhD",
+        "back": "Tiến sĩ",
+        "known": false
+      },
+      {
+        "id": "id_l455v8d",
+        "front": "Vocational course",
+        "back": "Khóa học hướng nghiệp",
+        "known": false
+      },
+      {
+        "id": "id_znxrh04",
+        "front": "Non-vocational course",
+        "back": "Khóa học tổng quát, không hướng nghiệp",
+        "known": false
+      },
+      {
+        "id": "id_89uats5",
+        "front": "Distance learning course",
+        "back": "Khóa học đào tạo từ xa",
+        "known": false
+      },
+      {
+        "id": "id_txraszp",
+        "front": "Comprehensive education",
+        "back": "Giáo dục toàn diện",
+        "known": false
+      },
+      {
+        "id": "id_f67hb8c",
+        "front": "To pursue tertiary education",
+        "back": "Theo đuổi giáo dục đại học",
+        "known": false
+      },
+      {
+        "id": "id_9mfbryp",
+        "front": "To give a presentation",
+        "back": "Thuyết trình",
+        "known": false
+      },
+      {
+        "id": "id_6rzo2mo",
+        "front": "To grasp the main point of the lesson",
+        "back": "Hiểu được nội dung bài giảng",
+        "known": false
+      },
+      {
+        "id": "id_hwsa3yj",
+        "front": "To bury oneself in tasks",
+        "back": "Vùi mình vào bài tập",
+        "known": false
+      },
+      {
+        "id": "id_lv7juow",
+        "front": "Extracurricular activities",
+        "back": "Hoạt động ngoại khóa",
+        "known": false
+      },
+      {
+        "id": "id_a1pau75",
+        "front": "Intellectual activities",
+        "back": "Hoạt động trí tuệ",
+        "known": false
+      },
+      {
+        "id": "id_88w5r9v",
+        "front": "A for effort",
+        "back": "Cố gắng hết sức dù kết quả không như mong muốn",
+        "known": false
+      },
+      {
+        "id": "id_8yun67f",
+        "front": "Copycat",
+        "back": "Người bắt chước bài người khác",
+        "known": false
+      },
+      {
+        "id": "id_9fd2402",
+        "front": "Drop out of school",
+        "back": "Nghỉ học / bỏ học",
+        "known": false
+      },
+      {
+        "id": "id_l08rekt",
+        "front": "Put your thinking cap on",
+        "back": "Suy nghĩ nghiêm túc về vấn đề",
+        "known": false
+      },
+      {
+        "id": "id_fbp9s8d",
+        "front": "Teacher’s pet",
+        "back": "Học sinh cưng của giáo viên",
+        "known": false
+      },
+      {
+        "id": "id_21owwse",
+        "front": "Bookworm",
+        "back": "Mọt sách",
+        "known": false
+      },
+      {
+        "id": "id_j5zd5e6",
+        "front": "Hit the books",
+        "back": "Học hành chăm chỉ",
+        "known": false
+      },
+      {
+        "id": "id_u5jd0vq",
+        "front": "To improve academic performance",
+        "back": "Cải thiện kết quả học tập",
+        "known": false
+      },
+      {
+        "id": "id_5araqed",
+        "front": "To be admitted to a top-tier school",
+        "back": "Được nhận vào trường hàng đầu",
+        "known": false
+      },
+      {
+        "id": "id_np903a5",
+        "front": "To instill the value of learning",
+        "back": "Thấm nhuần giá trị của việc học",
+        "known": false
+      },
+      {
+        "id": "id_20jocgh",
+        "front": "Learn a wide range of skills",
+        "back": "Học nhiều kỹ năng khác nhau",
+        "known": false
+      },
+      {
+        "id": "id_9j1rmg6",
+        "front": "Explore each other’s perspectives",
+        "back": "Khám phá quan điểm của nhau",
+        "known": false
+      },
+      {
+        "id": "id_kziyqsk",
+        "front": "Gain international qualifications",
+        "back": "Đạt bằng cấp quốc tế",
+        "known": false
+      },
+      {
+        "id": "id_9tah4p4",
+        "front": "Encourage independent learning",
+        "back": "Khuyến khích việc tự học",
+        "known": false
+      },
+      {
+        "id": "id_11q8puc",
+        "front": "Reach new heights of knowledge",
+        "back": "Đạt đến những đỉnh cao tri thức mới",
+        "known": false
+      },
+      {
+        "id": "id_9ank6a1",
+        "front": "Move up the career ladder",
+        "back": "Thăng tiến trong công việc",
+        "known": false
+      },
+      {
+        "id": "id_nsect1u",
+        "front": "Burn the midnight oil",
+        "back": "Thức khuya để học / làm việc",
+        "known": false
+      },
+      {
+        "id": "id_qrf2bmh",
+        "front": "There is little chance for …",
+        "back": "Hầu như không có cơ hội cho…",
+        "known": false
+      },
+      {
+        "id": "id_cotpexi",
+        "front": "Poor / outdated school facilities",
+        "back": "Cơ sở vật chất nghèo nàn / lỗi thời",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Environment",
+    "cards": [
+      {
+        "id": "id_0812iv5",
+        "front": "exploit",
+        "back": "khai thác",
+        "known": false
+      },
+      {
+        "id": "id_1m8qk9m",
+        "front": "over-abuse",
+        "back": "lạm dụng quá mức",
+        "known": false
+      },
+      {
+        "id": "id_x5ortoa",
+        "front": "degrade ecosystems",
+        "back": "làm suy thoái hệ sinh thái",
+        "known": false
+      },
+      {
+        "id": "id_7poza3r",
+        "front": "damage",
+        "back": "phá hủy",
+        "known": false
+      },
+      {
+        "id": "id_4p1x3v1",
+        "front": "deplete natural resources",
+        "back": "làm cạn kiệt tài nguyên thiên nhiên",
+        "known": false
+      },
+      {
+        "id": "id_nablqle",
+        "front": "offset CO2 emissions",
+        "back": "làm giảm lượng khí thải carbon/CO2",
+        "known": false
+      },
+      {
+        "id": "id_ceb5r8g",
+        "front": "raise awareness",
+        "back": "nâng cao nhận thức",
+        "known": false
+      },
+      {
+        "id": "id_2skylyu",
+        "front": "log forests",
+        "back": "chặt phá rừng",
+        "known": false
+      },
+      {
+        "id": "id_8b58cv7",
+        "front": "threaten natural habitats",
+        "back": "đe dọa môi trường sống tự nhiên",
+        "known": false
+      },
+      {
+        "id": "id_d12r5ir",
+        "front": "tackle / cope with",
+        "back": "giải quyết",
+        "known": false
+      },
+      {
+        "id": "id_qkq5n8u",
+        "front": "efficacious",
+        "back": "hiệu quả",
+        "known": false
+      },
+      {
+        "id": "id_rhw9dxx",
+        "front": "poisonous",
+        "back": "độc hại",
+        "known": false
+      },
+      {
+        "id": "id_hswy1mt",
+        "front": "environmentally-friendly",
+        "back": "thân thiện với môi trường",
+        "known": false
+      },
+      {
+        "id": "id_t8amnqs",
+        "front": "excessive",
+        "back": "quá mức",
+        "known": false
+      },
+      {
+        "id": "id_k1w198t",
+        "front": "easily recyclable",
+        "back": "có thể dễ dàng tái chế",
+        "known": false
+      },
+      {
+        "id": "id_e2qaj4l",
+        "front": "sustainable",
+        "back": "bền vững",
+        "known": false
+      },
+      {
+        "id": "id_bdegs2q",
+        "front": "biodegradable",
+        "back": "có thể phân hủy",
+        "known": false
+      },
+      {
+        "id": "id_wvpaf9u",
+        "front": "compostable",
+        "back": "có thể phân hủy thành phân hữu cơ",
+        "known": false
+      },
+      {
+        "id": "id_1krhb85",
+        "front": "endangered",
+        "back": "bị đe dọa",
+        "known": false
+      },
+      {
+        "id": "id_cdd0xtn",
+        "front": "disposable",
+        "back": "có thể tái sử dụng",
+        "known": false
+      },
+      {
+        "id": "id_8yz0kq2",
+        "front": "soil erosion",
+        "back": "xói mòn đất",
+        "known": false
+      },
+      {
+        "id": "id_fgfx66y",
+        "front": "activated carbon",
+        "back": "than hoạt tính",
+        "known": false
+      },
+      {
+        "id": "id_fqw0vxf",
+        "front": "alternatives",
+        "back": "giải pháp thay thế",
+        "known": false
+      },
+      {
+        "id": "id_eyacwtv",
+        "front": "deforestation",
+        "back": "phá rừng",
+        "known": false
+      },
+      {
+        "id": "id_ohbxsux",
+        "front": "contamination",
+        "back": "sự làm nhiễm độc",
+        "known": false
+      },
+      {
+        "id": "id_k5uquyt",
+        "front": "greenhouse",
+        "back": "hiệu ứng nhà kính",
+        "known": false
+      },
+      {
+        "id": "id_2n01wn4",
+        "front": "acid deposition",
+        "back": "mưa axit",
+        "known": false
+      },
+      {
+        "id": "id_0eae0dr",
+        "front": "protect a coastal ecosystem",
+        "back": "bảo vệ hệ sinh thái ven bờ",
+        "known": false
+      },
+      {
+        "id": "id_c7sfwpy",
+        "front": "raise awareness of environmental issues",
+        "back": "nâng cao nhận thức về những vấn đề môi trường",
+        "known": false
+      },
+      {
+        "id": "id_s7eid64",
+        "front": "exhaust gas",
+        "back": "khí thải",
+        "known": false
+      },
+      {
+        "id": "id_p9tzkbr",
+        "front": "illegal dumping",
+        "back": "xả rác trái quy định",
+        "known": false
+      },
+      {
+        "id": "id_t6jgqv7",
+        "front": "intensive farming",
+        "back": "canh tác quá mức",
+        "known": false
+      },
+      {
+        "id": "id_yrssp7t",
+        "front": "overpopulation",
+        "back": "dân số quá lớn",
+        "known": false
+      },
+      {
+        "id": "id_mf7wgst",
+        "front": "overgrazing",
+        "back": "chăn thả quá mức",
+        "known": false
+      },
+      {
+        "id": "id_211d1hp",
+        "front": "fresh / pure",
+        "back": "trong lành",
+        "known": false
+      },
+      {
+        "id": "id_ymv422n",
+        "front": "catalyze (for)",
+        "back": "xúc tác (cho)",
+        "known": false
+      },
+      {
+        "id": "id_4poal6r",
+        "front": "produce pollution / CO2 / greenhouse (gas) emissions",
+        "back": "tạo ra sự ô nhiễm / khí CO2 / khí thải nhà kính",
+        "known": false
+      },
+      {
+        "id": "id_eqvdxtx",
+        "front": "contaminate groundwater / the soil / food / crops",
+        "back": "làm ô nhiễm nguồn nước ngầm / đất / thực phẩm / mùa màng",
+        "known": false
+      },
+      {
+        "id": "id_0dfrp9y",
+        "front": "coal mine",
+        "back": "mỏ than",
+        "known": false
+      },
+      {
+        "id": "id_jya2b6i",
+        "front": "generation of Power",
+        "back": "sự phát điện",
+        "known": false
+      },
+      {
+        "id": "id_6uzhkq8",
+        "front": "nuclear reactor",
+        "back": "lò phản ứng hạt nhân",
+        "known": false
+      },
+      {
+        "id": "id_4mwnw9t",
+        "front": "electrical generator",
+        "back": "máy phát điện",
+        "known": false
+      },
+      {
+        "id": "id_lluz4m4",
+        "front": "transformer",
+        "back": "máy biến thế",
+        "known": false
+      },
+      {
+        "id": "id_nbq02gc",
+        "front": "radioactive waste",
+        "back": "chất thải phóng xạ",
+        "known": false
+      },
+      {
+        "id": "id_9y8jxws",
+        "front": "hydroelectricity",
+        "back": "thủy điện",
+        "known": false
+      },
+      {
+        "id": "id_nuoyu23",
+        "front": "implement rolling power cuts",
+        "back": "tiến hành cắt điện luân phiên",
+        "known": false
+      },
+      {
+        "id": "id_s1z7y1y",
+        "front": "high levels of radiation",
+        "back": "mức độ phóng xạ cao",
+        "known": false
+      },
+      {
+        "id": "id_5bzk3cu",
+        "front": "nuclear accident = nuclear disaster",
+        "back": "tai nạn / thảm họa hạt nhân",
+        "known": false
+      },
+      {
+        "id": "id_z0ruj2r",
+        "front": "litterer",
+        "back": "người xả rác",
+        "known": false
+      },
+      {
+        "id": "id_qwo0t11",
+        "front": "emission",
+        "back": "khí thải",
+        "known": false
+      },
+      {
+        "id": "id_t9u2qlf",
+        "front": "disturbing",
+        "back": "khó chịu",
+        "known": false
+      },
+      {
+        "id": "id_xy24n43",
+        "front": "separate / segregated",
+        "back": "phân loại",
+        "known": false
+      },
+      {
+        "id": "id_o1guzli",
+        "front": "fouling organisms",
+        "back": "sinh vật gây ô nhiễm",
+        "known": false
+      },
+      {
+        "id": "id_bltyyqd",
+        "front": "disposal place",
+        "back": "nơi vứt rác",
+        "known": false
+      },
+      {
+        "id": "id_34jihpp",
+        "front": "to prioritize",
+        "back": "ưu tiên cái gì hơn",
+        "known": false
+      },
+      {
+        "id": "id_hu7izb8",
+        "front": "construction projects",
+        "back": "công trình xây dựng",
+        "known": false
+      },
+      {
+        "id": "id_co1ouu5",
+        "front": "expanding fleets of cars and motorcycles",
+        "back": "hàng dài ô tô và xe máy",
+        "known": false
+      },
+      {
+        "id": "id_99xplq1",
+        "front": "air quality",
+        "back": "chất lượng không khí",
+        "known": false
+      },
+      {
+        "id": "id_loobu5a",
+        "front": "discard food waste",
+        "back": "bỏ thức ăn thừa",
+        "known": false
+      },
+      {
+        "id": "id_9xkbl2b",
+        "front": "the global plastic waste crisis",
+        "back": "cuộc khủng hoảng rác thải nhựa toàn cầu",
+        "known": false
+      },
+      {
+        "id": "id_ls2cque",
+        "front": "a world free of plastic pollution",
+        "back": "một thế giới không ô nhiễm nhựa",
+        "known": false
+      },
+      {
+        "id": "id_adz4yux",
+        "front": "carbon footprint",
+        "back": "dấu chân carbon",
+        "known": false
+      },
+      {
+        "id": "id_9y406ex",
+        "front": "ozone layer depletion",
+        "back": "suy thoái tầng ozon",
+        "known": false
+      },
+      {
+        "id": "id_xgy1ogl",
+        "front": "temperatures soar",
+        "back": "sự tăng nhiệt độ, sự nóng lên",
+        "known": false
+      },
+      {
+        "id": "id_k122nue",
+        "front": "natural disaster",
+        "back": "thảm họa thiên nhiên",
+        "known": false
+      },
+      {
+        "id": "id_s71i153",
+        "front": "climate change",
+        "back": "biến đổi khí hậu",
+        "known": false
+      },
+      {
+        "id": "id_v1psinp",
+        "front": "industrial waste",
+        "back": "rác thải công nghiệp",
+        "known": false
+      },
+      {
+        "id": "id_ummqwpw",
+        "front": "plastic pollution crisis",
+        "back": "khủng hoảng ô nhiễm nhựa",
+        "known": false
+      },
+      {
+        "id": "id_7wkietb",
+        "front": "the burning of fossil fuels",
+        "back": "việc đốt nhiên liệu hóa thạch",
+        "known": false
+      },
+      {
+        "id": "id_9b18uvg",
+        "front": "melting of the polar ice caps",
+        "back": "tan băng ở cực",
+        "known": false
+      },
+      {
+        "id": "id_ki3sw6w",
+        "front": "desertification",
+        "back": "quá trình sa mạc hóa",
+        "known": false
+      },
+      {
+        "id": "id_1wyzlb9",
+        "front": "threaten species with extinction",
+        "back": "đe dọa giống loài có nguy cơ tuyệt chủng",
+        "known": false
+      },
+      {
+        "id": "id_84bxu7i",
+        "front": "increases the risk of respiratory infections",
+        "back": "làm tăng nguy cơ nhiễm trùng đường hô hấp",
+        "known": false
+      },
+      {
+        "id": "id_2bbxu4a",
+        "front": "reduced lung function",
+        "back": "chức năng phổi bị giảm đi",
+        "known": false
+      },
+      {
+        "id": "id_tj8q626",
+        "front": "cause buildings and monuments to decays",
+        "back": "làm cho các tòa nhà và di tích bị tàn phá",
+        "known": false
+      },
+      {
+        "id": "id_az0d3uz",
+        "front": "lower reproductive rates",
+        "back": "bệnh tật và tỷ lệ sinh sản thấp hơn",
+        "known": false
+      },
+      {
+        "id": "id_rqs80qq",
+        "front": "mild breathing difficulties",
+        "back": "khó thở nhẹ",
+        "known": false
+      },
+      {
+        "id": "id_9xu57zk",
+        "front": "polluted cities",
+        "back": "các thành phố bị ô nhiễm",
+        "known": false
+      },
+      {
+        "id": "id_13dbngi",
+        "front": "create dust storms",
+        "back": "tạo ra bão bụi",
+        "known": false
+      },
+      {
+        "id": "id_dj9pojx",
+        "front": "damage crops, forests",
+        "back": "phá hoại mùa màng, rừng",
+        "known": false
+      },
+      {
+        "id": "id_pidhdn2",
+        "front": "to float around the world’s oceans",
+        "back": "trôi nổi khắp các đại dương trên thế giới",
+        "known": false
+      },
+      {
+        "id": "id_bp4egyj",
+        "front": "kill millions of marine animals",
+        "back": "giết hàng triệu động vật biển",
+        "known": false
+      },
+      {
+        "id": "id_4c3b5p2",
+        "front": "replace gasoline-fueled cars with zero-emissions vehicles",
+        "back": "thay thế xe chạy bằng xăng bằng xe không thải khí thải ra môi trường",
+        "known": false
+      },
+      {
+        "id": "id_h3i9jn1",
+        "front": "install pollution control devices",
+        "back": "lắp đặt thiết bị kiểm soát ô nhiễm",
+        "known": false
+      },
+      {
+        "id": "id_8z58mbs",
+        "front": "take public transportation instead of driving a car",
+        "back": "đi phương tiện công cộng thay vì lái xe",
+        "known": false
+      },
+      {
+        "id": "id_o09nwsh",
+        "front": "adopt laws to regulate emissions",
+        "back": "thông qua luật để điều tiết lượng khí thải",
+        "known": false
+      },
+      {
+        "id": "id_f3qoeen",
+        "front": "the green movement",
+        "back": "cuộc vận động xanh",
+        "known": false
+      },
+      {
+        "id": "id_urh0g12",
+        "front": "recycling waste or planting a tree in their garden",
+        "back": "tái chế rác thải và trồng cây trong vườn",
+        "known": false
+      },
+      {
+        "id": "id_kd0o3lv",
+        "front": "develop renewable energy",
+        "back": "phát triển nguồn năng lượng có thể tái tạo",
+        "known": false
+      },
+      {
+        "id": "id_rhwaguf",
+        "front": "choose products with less packaging",
+        "back": "chọn sản phẩm ít bao bì",
+        "known": false
+      },
+      {
+        "id": "id_kheo1i0",
+        "front": "take action on global warming",
+        "back": "ngăn chặn sự nóng lên toàn cầu",
+        "known": false
+      },
+      {
+        "id": "id_1twsm99",
+        "front": "pollution",
+        "back": "sự ô nhiễm/ quá trình ô nhiễm",
+        "known": false
+      },
+      {
+        "id": "id_fh2ovqi",
+        "front": "a marine ecosystem",
+        "back": "hệ sinh thái dưới nước",
+        "known": false
+      },
+      {
+        "id": "id_nqtggyw",
+        "front": "solar panel",
+        "back": "tấm năng lượng mặt trời",
+        "known": false
+      },
+      {
+        "id": "id_g1vb12m",
+        "front": "habitat destruction",
+        "back": "phá hủy môi trường sống tự nhiên",
+        "known": false
+      },
+      {
+        "id": "id_9vn9s44",
+        "front": "fossil fuels",
+        "back": "nhiên liệu hóa thạch",
+        "known": false
+      },
+      {
+        "id": "id_qwlq56m",
+        "front": "preserve biodiversity",
+        "back": "bảo tồn sự đa dạng sinh học",
+        "known": false
+      },
+      {
+        "id": "id_ycp4iyw",
+        "front": "the ozone layer",
+        "back": "tầng ozon",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Health",
+    "cards": [
+      {
+        "id": "id_inrrwr2",
+        "front": "balanced diet",
+        "back": "chế độ ăn uống cân bằng, điều độ",
+        "known": false
+      },
+      {
+        "id": "id_c20b151",
+        "front": "organic food",
+        "back": "thực phẩm hữu cơ",
+        "known": false
+      },
+      {
+        "id": "id_tgw3xpe",
+        "front": "intense workout",
+        "back": "tập luyện cường độ cao",
+        "known": false
+      },
+      {
+        "id": "id_8c3g7hs",
+        "front": "stay hydrated",
+        "back": "giữ cơ thể không mất nước",
+        "known": false
+      },
+      {
+        "id": "id_3qwb662",
+        "front": "health-conscious",
+        "back": "quan tâm đến sức khoẻ",
+        "known": false
+      },
+      {
+        "id": "id_x2sszgd",
+        "front": "have regular check-ups",
+        "back": "đi khám định kỳ",
+        "known": false
+      },
+      {
+        "id": "id_o9zneqe",
+        "front": "disease prevention",
+        "back": "phòng chống bệnh tật",
+        "known": false
+      },
+      {
+        "id": "id_arh1e0m",
+        "front": "optimistic mindset",
+        "back": "tư tưởng lạc quan",
+        "known": false
+      },
+      {
+        "id": "id_wqzb5mz",
+        "front": "speed up my metabolism",
+        "back": "tăng cường trao đổi chất",
+        "known": false
+      },
+      {
+        "id": "id_yix59yd",
+        "front": "eat fresh fruit and vegetables",
+        "back": "ăn rau quả tươi",
+        "known": false
+      },
+      {
+        "id": "id_p7m27wg",
+        "front": "to limit sugar intake",
+        "back": "hạn chế lượng đường nạp vào",
+        "known": false
+      },
+      {
+        "id": "id_3toj4jn",
+        "front": "screening",
+        "back": "sàng lọc",
+        "known": false
+      },
+      {
+        "id": "id_c9q1a19",
+        "front": "quarantine",
+        "back": "cách ly",
+        "known": false
+      },
+      {
+        "id": "id_x765xvm",
+        "front": "social distancing",
+        "back": "cách ly xã hội",
+        "known": false
+      },
+      {
+        "id": "id_1noa5z0",
+        "front": "protective measures",
+        "back": "biện pháp phòng ngừa",
+        "known": false
+      },
+      {
+        "id": "id_aztiihz",
+        "front": "self-isolate",
+        "back": "tự cách ly",
+        "known": false
+      },
+      {
+        "id": "id_hjge26z",
+        "front": "social bubble",
+        "back": "vòng tròn xã hội khép kín",
+        "known": false
+      },
+      {
+        "id": "id_gpouczo",
+        "front": "work from home",
+        "back": "làm việc tại nhà",
+        "known": false
+      },
+      {
+        "id": "id_dzymxsc",
+        "front": "personal protective equipment",
+        "back": "thiết bị bảo hộ cá nhân",
+        "known": false
+      },
+      {
+        "id": "id_dzu15th",
+        "front": "a global health crisis",
+        "back": "một cuộc khủng hoảng sức khỏe toàn cầu",
+        "known": false
+      },
+      {
+        "id": "id_pgqbr4q",
+        "front": "to be fully vaccinated",
+        "back": "được tiêm chủng đầy đủ",
+        "known": false
+      },
+      {
+        "id": "id_issmr7n",
+        "front": "to halt the spread of the virus",
+        "back": "ngăn chặn sự lây lan của vi rút",
+        "known": false
+      },
+      {
+        "id": "id_g8a0wql",
+        "front": "to face an existential threat",
+        "back": "đối mặt với mối đe dọa tới sự tồn tại của con người",
+        "known": false
+      },
+      {
+        "id": "id_32zw83q",
+        "front": "to experience financial hardship",
+        "back": "gặp khó khăn về tài chính",
+        "known": false
+      },
+      {
+        "id": "id_aelosy7",
+        "front": "disseminate information",
+        "back": "phổ biến thông tin",
+        "known": false
+      },
+      {
+        "id": "id_9em0kyo",
+        "front": "early diagnosis",
+        "back": "chẩn đoán sớm",
+        "known": false
+      },
+      {
+        "id": "id_p6vdxzt",
+        "front": "treatment",
+        "back": "điều trị",
+        "known": false
+      },
+      {
+        "id": "id_7hei5bg",
+        "front": "prescription",
+        "back": "việc kê đơn thuốc",
+        "known": false
+      },
+      {
+        "id": "id_s0u7p79",
+        "front": "organize medical workshops",
+        "back": "tổ chức hội thảo y khoa",
+        "known": false
+      },
+      {
+        "id": "id_5vz37yi",
+        "front": "advanced medical facilities",
+        "back": "trang thiết bị y tế hiện đại",
+        "known": false
+      },
+      {
+        "id": "id_f41h651",
+        "front": "to take the full responsibility",
+        "back": "chịu toàn bộ trách nhiệm",
+        "known": false
+      },
+      {
+        "id": "id_rw7ijlq",
+        "front": "enhance medical workers' competency",
+        "back": "nâng cao năng lực của nhân viên y tế",
+        "known": false
+      },
+      {
+        "id": "id_zp2jvyp",
+        "front": "eating disorder",
+        "back": "rối loạn tiêu hóa",
+        "known": false
+      },
+      {
+        "id": "id_rm1umse",
+        "front": "narcotic",
+        "back": "chất gây nghiện bị cấm",
+        "known": false
+      },
+      {
+        "id": "id_a7sx47m",
+        "front": "fast / processed foods",
+        "back": "thực phẩm nhanh / chế biến",
+        "known": false
+      },
+      {
+        "id": "id_08pb154",
+        "front": "junk food",
+        "back": "đồ ăn vặt",
+        "known": false
+      },
+      {
+        "id": "id_yocghqa",
+        "front": "taking drugs",
+        "back": "sử dụng ma túy",
+        "known": false
+      },
+      {
+        "id": "id_2tfj8qn",
+        "front": "chronic disease",
+        "back": "bệnh mãn tính",
+        "known": false
+      },
+      {
+        "id": "id_q7z7wqk",
+        "front": "sedentary lifestyles",
+        "back": "lối sống thụ động",
+        "known": false
+      },
+      {
+        "id": "id_ybpa4qp",
+        "front": "highly addictive ingredients",
+        "back": "các thành phần gây nghiện cao",
+        "known": false
+      },
+      {
+        "id": "id_ymb2b1m",
+        "front": "excessive consumption of…",
+        "back": "việc tiêu thụ quá mức…",
+        "known": false
+      },
+      {
+        "id": "id_u1hyfbz",
+        "front": "prevention is better than cure",
+        "back": "phòng bệnh hơn chữa bệnh",
+        "known": false
+      },
+      {
+        "id": "id_f9qhfc4",
+        "front": "burden on society",
+        "back": "gánh nặng cho xã hội",
+        "known": false
+      },
+      {
+        "id": "id_joobqbi",
+        "front": "upgrade medical competency",
+        "back": "nâng cao tay nghề của y bác sĩ",
+        "known": false
+      },
+      {
+        "id": "id_0nvmojy",
+        "front": "reduce personal financial stress",
+        "back": "giảm áp lực lên tài chính cá nhân",
+        "known": false
+      },
+      {
+        "id": "id_8zq54ym",
+        "front": "easy organization of activities and campaigns",
+        "back": "tổ chức các hoạt động và chiến dịch dễ dàng",
+        "known": false
+      },
+      {
+        "id": "id_czs31qb",
+        "front": "to alleviate (the) pain / symptoms",
+        "back": "giảm đau, giảm triệu chứng",
+        "known": false
+      },
+      {
+        "id": "id_saoa5ps",
+        "front": "to reduce one's stress levels",
+        "back": "giảm bớt mức độ căng thẳng",
+        "known": false
+      },
+      {
+        "id": "id_32tjafs",
+        "front": "to lead a sedentary lifestyle",
+        "back": "để có lối sống ít vận động",
+        "known": false
+      },
+      {
+        "id": "id_ks6jass",
+        "front": "to reduce meat intake",
+        "back": "giảm lượng thịt",
+        "known": false
+      },
+      {
+        "id": "id_usprppl",
+        "front": "the prevalence of fast food and processed food",
+        "back": "việc thịnh hành của thức ăn nhanh và các thức ăn được chế biến sẵn",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Family",
+    "cards": [
+      {
+        "id": "id_49ixhb1",
+        "front": "Nuclear family",
+        "back": "Gia đình cơ bản với đầy đủ bố mẹ và con cái",
+        "known": false
+      },
+      {
+        "id": "id_fcp0mdg",
+        "front": "Immediate family",
+        "back": "Gia đình ruột thịt",
+        "known": false
+      },
+      {
+        "id": "id_49n72kr",
+        "front": "Extended family",
+        "back": "Đại gia đình",
+        "known": false
+      },
+      {
+        "id": "id_nrp6yyx",
+        "front": "Dysfunctional family",
+        "back": "Gia đình bất ổn",
+        "known": false
+      },
+      {
+        "id": "id_859bkr0",
+        "front": "Single parent",
+        "back": "Bố hoặc mẹ đơn thân",
+        "known": false
+      },
+      {
+        "id": "id_bi8dg2o",
+        "front": "Adoptive parents",
+        "back": "Gia đình nhận con nuôi",
+        "known": false
+      },
+      {
+        "id": "id_3zifv7g",
+        "front": "Only-child",
+        "back": "Gia đình một con",
+        "known": false
+      },
+      {
+        "id": "id_sgeqpq2",
+        "front": "Ancestor",
+        "back": "Tổ tiên",
+        "known": false
+      },
+      {
+        "id": "id_ji4mldd",
+        "front": "Parent",
+        "back": "Bố mẹ",
+        "known": false
+      },
+      {
+        "id": "id_94zt3mt",
+        "front": "Grandfather / Grandmother",
+        "back": "Ông / Bà",
+        "known": false
+      },
+      {
+        "id": "id_3h7yejf",
+        "front": "Father / Mother",
+        "back": "Bố / Mẹ",
+        "known": false
+      },
+      {
+        "id": "id_kolfye9",
+        "front": "Brother",
+        "back": "Anh / Em trai",
+        "known": false
+      },
+      {
+        "id": "id_6zaev14",
+        "front": "Sister",
+        "back": "Chị / Em gái",
+        "known": false
+      },
+      {
+        "id": "id_82i0r63",
+        "front": "Sibling",
+        "back": "Anh em ruột",
+        "known": false
+      },
+      {
+        "id": "id_q4j8jl5",
+        "front": "Daughter",
+        "back": "Con gái",
+        "known": false
+      },
+      {
+        "id": "id_7vhkq4w",
+        "front": "Son",
+        "back": "Con trai",
+        "known": false
+      },
+      {
+        "id": "id_58v7ltm",
+        "front": "Twin / Triplet",
+        "back": "Song sinh / Sinh ba",
+        "known": false
+      },
+      {
+        "id": "id_o21h9fe",
+        "front": "Stepfather / Stepmother",
+        "back": "Bố dượng / Mẹ kế",
+        "known": false
+      },
+      {
+        "id": "id_8wwl0iv",
+        "front": "Half-brother / Half-sister",
+        "back": "Anh em cùng cha khác mẹ / Chị em cùng mẹ khác cha",
+        "known": false
+      },
+      {
+        "id": "id_oasby14",
+        "front": "Step-brother / Step-sister",
+        "back": "Anh kế / Chị kế",
+        "known": false
+      },
+      {
+        "id": "id_dbi82g9",
+        "front": "Nephew",
+        "back": "Cháu trai",
+        "known": false
+      },
+      {
+        "id": "id_usabn94",
+        "front": "Niece",
+        "back": "Cháu gái",
+        "known": false
+      },
+      {
+        "id": "id_5sdb45k",
+        "front": "Cousin",
+        "back": "Anh em họ",
+        "known": false
+      },
+      {
+        "id": "id_lxnry7w",
+        "front": "Distant relative",
+        "back": "Họ hàng xa",
+        "known": false
+      },
+      {
+        "id": "id_p3mc8xv",
+        "front": "Uncle",
+        "back": "Bác trai / Chú / Cậu",
+        "known": false
+      },
+      {
+        "id": "id_k5377of",
+        "front": "Aunt",
+        "back": "Bác gái / Cô / Dì / Thím",
+        "known": false
+      },
+      {
+        "id": "id_5myx3qc",
+        "front": "Father-in-law",
+        "back": "Bố chồng / Bố vợ",
+        "known": false
+      },
+      {
+        "id": "id_paxijso",
+        "front": "Mother-in-law",
+        "back": "Mẹ chồng / Mẹ vợ",
+        "known": false
+      },
+      {
+        "id": "id_gbpcuno",
+        "front": "Parents-in-law",
+        "back": "Bố mẹ chồng / Bố mẹ vợ",
+        "known": false
+      },
+      {
+        "id": "id_r75po3a",
+        "front": "Son-in-law",
+        "back": "Con rể",
+        "known": false
+      },
+      {
+        "id": "id_k2ent5o",
+        "front": "Daughter-in-law",
+        "back": "Con dâu",
+        "known": false
+      },
+      {
+        "id": "id_9i19de0",
+        "front": "Sister-in-law",
+        "back": "Chị / Em dâu",
+        "known": false
+      },
+      {
+        "id": "id_7gqwfgf",
+        "front": "Brother-in-law",
+        "back": "Anh / Em rể",
+        "known": false
+      },
+      {
+        "id": "id_u8v3qzj",
+        "front": "Get together",
+        "back": "Tụ họp",
+        "known": false
+      },
+      {
+        "id": "id_li7osan",
+        "front": "Adopt",
+        "back": "Nhận nuôi",
+        "known": false
+      },
+      {
+        "id": "id_8dtthcl",
+        "front": "Look after",
+        "back": "Chăm sóc",
+        "known": false
+      },
+      {
+        "id": "id_td2puim",
+        "front": "Bring up",
+        "back": "Nuôi nấng",
+        "known": false
+      },
+      {
+        "id": "id_tsa1mhx",
+        "front": "Grow up",
+        "back": "Trưởng thành",
+        "known": false
+      },
+      {
+        "id": "id_zbqnj6o",
+        "front": "Give birth to",
+        "back": "Sinh con",
+        "known": false
+      },
+      {
+        "id": "id_r6ne3p4",
+        "front": "Take after",
+        "back": "Giống (Ngoại hình)",
+        "known": false
+      },
+      {
+        "id": "id_svkpkij",
+        "front": "Settle down",
+        "back": "Định cư",
+        "known": false
+      },
+      {
+        "id": "id_08003rj",
+        "front": "Tell off",
+        "back": "La mắng",
+        "known": false
+      },
+      {
+        "id": "id_tsmmwzj",
+        "front": "Make up with",
+        "back": "Làm hòa với",
+        "known": false
+      },
+      {
+        "id": "id_d99mlur",
+        "front": "Divorce",
+        "back": "Li dị",
+        "known": false
+      },
+      {
+        "id": "id_07lmyc1",
+        "front": "Black sheep of the family",
+        "back": "Thành viên cá biệt trong gia đình",
+        "known": false
+      },
+      {
+        "id": "id_e0w6v5l",
+        "front": "Fall out with",
+        "back": "Xung đột, tranh cãi với ai đó và không còn thân thiện",
+        "known": false
+      },
+      {
+        "id": "id_vrz9afy",
+        "front": "Own flesh and blood",
+        "back": "Người thân của nhau",
+        "known": false
+      },
+      {
+        "id": "id_g6h3t4g",
+        "front": "Blood is thicker than water",
+        "back": "Một giọt máu đào hơn ao nước lã",
+        "known": false
+      },
+      {
+        "id": "id_gxppf3u",
+        "front": "Breadwinner",
+        "back": "Người gánh kinh tế gia đình",
+        "known": false
+      },
+      {
+        "id": "id_bm3lf2n",
+        "front": "Run in the family",
+        "back": "Đặc tính, di truyền",
+        "known": false
+      },
+      {
+        "id": "id_oqsclcx",
+        "front": "Wear the trousers",
+        "back": "Người quyết định",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Travel",
+    "cards": [
+      {
+        "id": "id_4fg3ufp",
+        "front": "Airline schedule",
+        "back": "Hành trình bay",
+        "known": false
+      },
+      {
+        "id": "id_8exyxhh",
+        "front": "Baggage allowance",
+        "back": "Lượng hành lý cho phép",
+        "known": false
+      },
+      {
+        "id": "id_d7ovtqq",
+        "front": "Boarding pass",
+        "back": "Thẻ lên máy bay",
+        "known": false
+      },
+      {
+        "id": "id_uyipvck",
+        "front": "Loyalty programme",
+        "back": "Chương trình người dùng thường xuyên",
+        "known": false
+      },
+      {
+        "id": "id_3nmnbsq",
+        "front": "Excursion / Promotion airfare",
+        "back": "Vé máy bay khuyến mãi / hạ giá",
+        "known": false
+      },
+      {
+        "id": "id_1timq6l",
+        "front": "Vietnam National Administration of Tourism",
+        "back": "Tổng cục du lịch Việt Nam",
+        "known": false
+      },
+      {
+        "id": "id_r6iqwej",
+        "front": "Travel Desk Agent",
+        "back": "Nhân viên đại lý du lịch",
+        "known": false
+      },
+      {
+        "id": "id_zetow1i",
+        "front": "Airline route map",
+        "back": "Sơ đồ tuyến bay",
+        "known": false
+      },
+      {
+        "id": "id_95hvj45",
+        "front": "Minicab / Cab",
+        "back": "Xe cho thuê",
+        "known": false
+      },
+      {
+        "id": "id_5j9lsp0",
+        "front": "Subway",
+        "back": "Xe điện ngầm",
+        "known": false
+      },
+      {
+        "id": "id_e5av9h6",
+        "front": "Bus station",
+        "back": "Trạm xe buýt",
+        "known": false
+      },
+      {
+        "id": "id_w0dqe6o",
+        "front": "High-speed train",
+        "back": "Tàu cao tốc",
+        "known": false
+      },
+      {
+        "id": "id_h6ptzt7",
+        "front": "Go by rail",
+        "back": "Đi bằng đường sắt",
+        "known": false
+      },
+      {
+        "id": "id_z9j5dzg",
+        "front": "Cruise ship",
+        "back": "Tàu du lịch",
+        "known": false
+      },
+      {
+        "id": "id_j3zov1a",
+        "front": "Voyage",
+        "back": "Hành trình",
+        "known": false
+      },
+      {
+        "id": "id_8wh2p4z",
+        "front": "Sailboat",
+        "back": "Thuyền buồm",
+        "known": false
+      },
+      {
+        "id": "id_dwmvrhy",
+        "front": "Port",
+        "back": "Cảng",
+        "known": false
+      },
+      {
+        "id": "id_kpgk0rx",
+        "front": "Set sail",
+        "back": "Đặt buồm",
+        "known": false
+      },
+      {
+        "id": "id_l0huo4n",
+        "front": "Exploit and enjoy pristine beauty",
+        "back": "Khám phá và cảm nhận vẻ đẹp hoang sơ",
+        "known": false
+      },
+      {
+        "id": "id_9aop9ui",
+        "front": "To promote tourism image",
+        "back": "Quảng bá hình ảnh du lịch",
+        "known": false
+      },
+      {
+        "id": "id_ddwix2b",
+        "front": "Do extreme sports",
+        "back": "Chơi trò chơi thể thao mạo hiểm",
+        "known": false
+      },
+      {
+        "id": "id_57dycqe",
+        "front": "To laze around on the sandy beach",
+        "back": "Nghỉ ngơi, thư giãn bên bãi biển",
+        "known": false
+      },
+      {
+        "id": "id_apnlrkx",
+        "front": "To enjoy bustling trade",
+        "back": "Tận hưởng nhịp sống nhộn nhịp",
+        "known": false
+      },
+      {
+        "id": "id_c8y875q",
+        "front": "Go in the low / peak season",
+        "back": "Đi du lịch vào mùa thấp / cao điểm",
+        "known": false
+      },
+      {
+        "id": "id_4cvtbqe",
+        "front": "Discover new culture and cuisine",
+        "back": "Khám phá nền văn hoá, ẩm thực",
+        "known": false
+      },
+      {
+        "id": "id_fz21tk9",
+        "front": "Escape from the hustle and bustle of the fast-paced life",
+        "back": "Thoát khỏi nhịp sống hối hả và bận rộn",
+        "known": false
+      },
+      {
+        "id": "id_ox4pc29",
+        "front": "Immerse oneself in nature",
+        "back": "Hòa mình vào thiên nhiên",
+        "known": false
+      },
+      {
+        "id": "id_hyjc7lj",
+        "front": "Horse-riding",
+        "back": "Cưỡi ngựa",
+        "known": false
+      },
+      {
+        "id": "id_k1i9hx3",
+        "front": "The place itself is majestic",
+        "back": "Cảnh quang ở đây thật hùng vĩ",
+        "known": false
+      },
+      {
+        "id": "id_ycxm9k5",
+        "front": "Breathtaking",
+        "back": "Ngoạn mục",
+        "known": false
+      },
+      {
+        "id": "id_5e0jgwi",
+        "front": "Picturesque",
+        "back": "Đẹp như tranh vẽ",
+        "known": false
+      },
+      {
+        "id": "id_r4fti57",
+        "front": "Bewitching",
+        "back": "Đẹp hoặc hấp dẫn đến mức không thể nghĩ về thứ gì khác",
+        "known": false
+      },
+      {
+        "id": "id_76lt6f8",
+        "front": "Off the beaten track",
+        "back": "Vùng xa, bí hiểm, chưa ai biết đến",
+        "known": false
+      },
+      {
+        "id": "id_b2r7tjs",
+        "front": "Isolated corner",
+        "back": "Nơi hẻo lánh, biệt lập",
+        "known": false
+      },
+      {
+        "id": "id_la8w10g",
+        "front": "Budget-friendly",
+        "back": "Chi phí rẻ, phù hợp với túi tiền",
+        "known": false
+      },
+      {
+        "id": "id_ulzpev4",
+        "front": "Unexplored wilderness",
+        "back": "Vùng hoang sơ chưa được khám phá",
+        "known": false
+      },
+      {
+        "id": "id_hxswmkq",
+        "front": "It's a disappearing natural wonder",
+        "back": "Đó là một kỳ quan đang mất dần đi",
+        "known": false
+      },
+      {
+        "id": "id_cpfm8ol",
+        "front": "It's absolutely a must-go place for everyone",
+        "back": "Đó là một nơi phải đến cho tất cả mọi người",
+        "known": false
+      },
+      {
+        "id": "id_yfc7xvi",
+        "front": "See another culture first-hand",
+        "back": "Cảm nhận trực tiếp một nền văn hóa khác",
+        "known": false
+      },
+      {
+        "id": "id_1exyldo",
+        "front": "Making the host destination more authentic and desirable to visitors",
+        "back": "Lôi cuốn khách đến thăm quan nhiều hơn",
+        "known": false
+      },
+      {
+        "id": "id_577b0db",
+        "front": "Widen horizon / outlook a new culture",
+        "back": "Mở mang tầm nhìn về một nền văn hóa mới",
+        "known": false
+      },
+      {
+        "id": "id_pnf6ie3",
+        "front": "Restore historical sites / historical monuments",
+        "back": "Bảo tồn lưu giữ các công trình lịch sử",
+        "known": false
+      },
+      {
+        "id": "id_4b99gbs",
+        "front": "Stimulates investments in public infrastructure",
+        "back": "Thúc đẩy đầu tư cơ sở hạ tầng công cộng",
+        "known": false
+      },
+      {
+        "id": "id_50lzwvh",
+        "front": "Tourism is a key driver of job growth",
+        "back": "Động lực thúc đẩy tăng trưởng việc làm",
+        "known": false
+      },
+      {
+        "id": "id_yq70sz8",
+        "front": "Contributes greatly to economic growth",
+        "back": "Đóng góp vào tăng trưởng kinh tế",
+        "known": false
+      },
+      {
+        "id": "id_d6dw4ov",
+        "front": "Get me outside my comfort zone",
+        "back": "Thoát khỏi vùng an toàn của chính mình",
+        "known": false
+      },
+      {
+        "id": "id_bvxbwsw",
+        "front": "A Sense of adventure",
+        "back": "Cảm giác / Trải nghiệm đầy tính phiêu lưu",
+        "known": false
+      },
+      {
+        "id": "id_fw6g9it",
+        "front": "Pollute / contaminate environment",
+        "back": "Làm ô nhiễm môi trường",
+        "known": false
+      },
+      {
+        "id": "id_tjsid9e",
+        "front": "Illegally exploit its ecological traits for individual benefits",
+        "back": "Khai thác hệ sinh thái một cách hợp pháp nhằm phục vụ các lợi ích cá nhân",
+        "known": false
+      },
+      {
+        "id": "id_0abttn8",
+        "front": "Triggers the loss of traditional culture",
+        "back": "Làm phai mờ bản sắc văn hóa địa phương",
+        "known": false
+      },
+      {
+        "id": "id_thgbra9",
+        "front": "To threaten wildlife / To pose a threat to wildlife",
+        "back": "Đe dọa động vật hoang dã",
+        "known": false
+      },
+      {
+        "id": "id_73ecwem",
+        "front": "Destroy natural habitats",
+        "back": "Phá hủy môi trường sống tự nhiên",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Technology",
+    "cards": [
+      {
+        "id": "id_q2uktah",
+        "front": "Appliance /əˈplaɪ.əns/",
+        "back": "Thiết bị, máy móc",
+        "known": false
+      },
+      {
+        "id": "id_bifpriz",
+        "front": "Turntable /ˈtɜːnˌteɪ.bəl/",
+        "back": "Máy hát",
+        "known": false
+      },
+      {
+        "id": "id_73qle2q",
+        "front": "Microprocessor /ˌmaɪ.krəʊˈprəʊ.ses.ər/",
+        "back": "Bộ vi xử lý",
+        "known": false
+      },
+      {
+        "id": "id_zvlraoz",
+        "front": "Selfie stick /ˈsel.fi ˌstɪk/",
+        "back": "Gậy hỗ trợ tự chụp ảnh",
+        "known": false
+      },
+      {
+        "id": "id_j7g5pr7",
+        "front": "Wireless headphones /ˈwaɪə.ləs/ /ˈhed.fəʊnz/",
+        "back": "Tai nghe không dây",
+        "known": false
+      },
+      {
+        "id": "id_1rpisc3",
+        "front": "Router /ˈruː.tər/",
+        "back": "Thiết bị phát sóng internet",
+        "known": false
+      },
+      {
+        "id": "id_dp9gzuq",
+        "front": "Cloud storage /ˈklaʊd ˌstɔː.rɪdʒ/",
+        "back": "Lưu trữ đám mây",
+        "known": false
+      },
+      {
+        "id": "id_j8ug4q8",
+        "front": "High-spec (laptop)",
+        "back": "Máy tính chất lượng cao",
+        "known": false
+      },
+      {
+        "id": "id_0gz371x",
+        "front": "USB (Universal Serial Bus)",
+        "back": "Cổng kết nối cáp tiêu chuẩn cho máy tính và thiết bị điện tử",
+        "known": false
+      },
+      {
+        "id": "id_rxbgyo3",
+        "front": "Artificial intelligence /ˌɑː.tɪ.fɪʃ.əl ɪnˈtel.ɪ.dʒəns/",
+        "back": "Trí tuệ nhân tạo",
+        "known": false
+      },
+      {
+        "id": "id_otoz11o",
+        "front": "Augmented reality /ɔːɡˌmentɪd riˈæl.ɪ.ti/",
+        "back": "Thực tế tăng cường",
+        "known": false
+      },
+      {
+        "id": "id_yqsz8ke",
+        "front": "Virtual reality /ˌvɜː.tju.əl riˈæl.ɪ.ti/",
+        "back": "Thực tế ảo",
+        "known": false
+      },
+      {
+        "id": "id_j7yltkg",
+        "front": "Humanoid /ˈhjuː.mə.nɔɪd/",
+        "back": "Rô bốt hình người",
+        "known": false
+      },
+      {
+        "id": "id_aow11lt",
+        "front": "Gadget /ˈɡædʒ.ɪt/",
+        "back": "Đồ dùng công nghệ",
+        "known": false
+      },
+      {
+        "id": "id_llqp4b3",
+        "front": "Labor-intensive /ˌleɪ.bər.ɪnˈten.sɪv/",
+        "back": "(Công việc) Cần nhiều lao động",
+        "known": false
+      },
+      {
+        "id": "id_xyuwbc4",
+        "front": "Personality trait /ˌpɜː.sənˈæl.ə.ti/ /treɪt/",
+        "back": "Tính cách",
+        "known": false
+      },
+      {
+        "id": "id_omh2jfz",
+        "front": "Strike up conversations",
+        "back": "Bắt chuyện",
+        "known": false
+      },
+      {
+        "id": "id_gr1hwyg",
+        "front": "Operating System /ˈɒp.ər.eɪ.tɪŋ ˌsɪs.təm/",
+        "back": "Hệ điều hành (chung)",
+        "known": false
+      },
+      {
+        "id": "id_egz69xv",
+        "front": "Streaming videos /ˈstriː.mɪŋ/ /ˈvɪd.i.əʊ/",
+        "back": "Phát video",
+        "known": false
+      },
+      {
+        "id": "id_5nfn7lu",
+        "front": "Cybercriminal /ˈsaɪ.bə.krɪm/",
+        "back": "Tội phạm mạng",
+        "known": false
+      },
+      {
+        "id": "id_6356lwe",
+        "front": "E-commerce /ˌiːˈkɒm.ɜːs/",
+        "back": "Nền tảng mua bán trực tuyến",
+        "known": false
+      },
+      {
+        "id": "id_a09pgws",
+        "front": "Intranet /ˈɪn.trə.net/",
+        "back": "Mạng máy tính nội bộ",
+        "known": false
+      },
+      {
+        "id": "id_ylx5io7",
+        "front": "Algorithm /ˈæl.ɡə.rɪ.ðəm/",
+        "back": "Thuật toán",
+        "known": false
+      },
+      {
+        "id": "id_r5ocs9l",
+        "front": "Wearable technology /ˈweə.rə.bəl/ /tekˈnɒl.ə.dʒi/",
+        "back": "Công nghệ mang trên người",
+        "known": false
+      },
+      {
+        "id": "id_a8hxy00",
+        "front": "Blockchain /ˈblɒk.tʃeɪn/",
+        "back": "Công nghệ blockchain",
+        "known": false
+      },
+      {
+        "id": "id_o95l585",
+        "front": "LAN (Local Area Network)",
+        "back": "Mạng máy tính nội bộ",
+        "known": false
+      },
+      {
+        "id": "id_d2nx4lb",
+        "front": "ITB (Information Technology Branch)",
+        "back": "Ngành công nghệ thông tin",
+        "known": false
+      },
+      {
+        "id": "id_gsn8qf3",
+        "front": "OSI (Open System Interconnection)",
+        "back": "Mô hình chuẩn OSI",
+        "known": false
+      },
+      {
+        "id": "id_n53u352",
+        "front": "PPP (Point-to-Point Protocol)",
+        "back": "Giao thức kết nối Internet tin cậy thông qua Modem",
+        "known": false
+      },
+      {
+        "id": "id_jzcq680",
+        "front": "GPS (Global Positioning System)",
+        "back": "Hệ thống xác định vị trí toàn cầu",
+        "known": false
+      },
+      {
+        "id": "id_s60le6h",
+        "front": "DNS (Domain Name System)",
+        "back": "Hệ thống phân giải tên miền",
+        "known": false
+      },
+      {
+        "id": "id_gkjmfdk",
+        "front": "UX (User experience)",
+        "back": "Giao diện người dùng",
+        "known": false
+      },
+      {
+        "id": "id_bg5h1f4",
+        "front": "JPEG (Joint Photographic Experts Group)",
+        "back": "Định dạng hình ảnh lưu bằng phương pháp nén mất dữ liệu",
+        "known": false
+      },
+      {
+        "id": "id_q9113jv",
+        "front": "RAM (Random Access Memory)",
+        "back": "Bộ nhớ khả biến cho phép truy xuất đọc-ghi ngẫu nhiên",
+        "known": false
+      },
+      {
+        "id": "id_o9v3lv7",
+        "front": "HTML (HyperText Markup Language)",
+        "back": "Ngôn ngữ đánh dấu tạo nên các trang web",
+        "known": false
+      },
+      {
+        "id": "id_nsuofne",
+        "front": "FAQ (Frequently Asked Questions)",
+        "back": "Các câu hỏi thường gặp",
+        "known": false
+      },
+      {
+        "id": "id_91jdi3l",
+        "front": "Eye-opening",
+        "back": "Mở mang tầm mắt",
+        "known": false
+      },
+      {
+        "id": "id_idhoek1",
+        "front": "Keep in touch with",
+        "back": "Giữ liên lạc với ai",
+        "known": false
+      },
+      {
+        "id": "id_srqz71f",
+        "front": "Personal and professional relationships",
+        "back": "Mối quan hệ cá nhân và sự nghiệp",
+        "known": false
+      },
+      {
+        "id": "id_w9vma8x",
+        "front": "Expand business network",
+        "back": "Mở rộng thêm mạng lưới kinh doanh",
+        "known": false
+      },
+      {
+        "id": "id_t1fc3yb",
+        "front": "Take part in interactive activities",
+        "back": "Tham gia các hoạt động có tính tương tác",
+        "known": false
+      },
+      {
+        "id": "id_ey4l8wg",
+        "front": "Distract somebody from something",
+        "back": "Làm ai đó xao nhãng, mất tập trung",
+        "known": false
+      },
+      {
+        "id": "id_1f24kk6",
+        "front": "Discourage real interaction",
+        "back": "Cản trở sự tương tác thực",
+        "known": false
+      },
+      {
+        "id": "id_3lhqz8i",
+        "front": "Social isolation",
+        "back": "Sự cô lập, cách ly xã hội",
+        "known": false
+      },
+      {
+        "id": "id_jiofg0q",
+        "front": "The loss of traditional cultures",
+        "back": "Sự mất đi của nét văn hóa truyền thống",
+        "known": false
+      },
+      {
+        "id": "id_u11411f",
+        "front": "Improve the quality of life",
+        "back": "Cải thiện chất lượng cuộc sống",
+        "known": false
+      },
+      {
+        "id": "id_ztg6r26",
+        "front": "Grasp the opportunity",
+        "back": "Tận dụng cơ hội để làm gì",
+        "known": false
+      },
+      {
+        "id": "id_3vap1w7",
+        "front": "Keep abreast of something",
+        "back": "Cập nhật cái gì mới",
+        "known": false
+      },
+      {
+        "id": "id_334vfrf",
+        "front": "Work one’s fingers to the bone",
+        "back": "Làm việc chăm chỉ",
+        "known": false
+      },
+      {
+        "id": "id_u648s1e",
+        "front": "Pull the Plug On",
+        "back": "Dừng lại một việc gì đó ngay lập tức",
+        "known": false
+      },
+      {
+        "id": "id_kzidth5",
+        "front": "Run into a Buzz Saw",
+        "back": "Gặp phải sự cố nghiêm trọng và bất ngờ",
+        "known": false
+      },
+      {
+        "id": "id_0bpkd9n",
+        "front": "A glitch in the system",
+        "back": "Bị lỗi hệ thống",
+        "known": false
+      },
+      {
+        "id": "id_f7jdy5u",
+        "front": "To go viral",
+        "back": "Trở nên phổ biến với tốc độ kinh ngạc",
+        "known": false
+      },
+      {
+        "id": "id_1ggtkk7",
+        "front": "To get up to speed",
+        "back": "Bắt kịp nhịp độ, xu thế",
+        "known": false
+      },
+      {
+        "id": "id_pkgo8da",
+        "front": "To troubleshoot",
+        "back": "Tìm kiếm và khắc phục sự cố",
+        "known": false
+      },
+      {
+        "id": "id_v5obgm8",
+        "front": "To plug away",
+        "back": "Làm điều gì đó một cách quyết tâm bất chấp khó khăn",
+        "known": false
+      },
+      {
+        "id": "id_v40y46f",
+        "front": "In the loop",
+        "back": "Luôn cập nhật những điều quan trọng đối với những gì bạn và mọi người đang làm",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Sport",
+    "cards": [
+      {
+        "id": "id_7gkeevt",
+        "front": "Canoeing /kəˈnuː.ɪŋ/",
+        "back": "Chèo thuyền ca-nô",
+        "known": false
+      },
+      {
+        "id": "id_lprgtbk",
+        "front": "Gymnastics /dʒɪmˈnæs.tɪks/",
+        "back": "Tập thể hình",
+        "known": false
+      },
+      {
+        "id": "id_vvsd7qr",
+        "front": "Horse racing /ˈhɔːs ˌreɪ.sɪŋ/",
+        "back": "Đua ngựa",
+        "known": false
+      },
+      {
+        "id": "id_cvjnt0q",
+        "front": "American football /əˌmer.ɪ.kən ˈfʊt.bɔːl/",
+        "back": "Bóng đá Mỹ",
+        "known": false
+      },
+      {
+        "id": "id_dylp8mb",
+        "front": "Mountaineering /ˌmaʊn.tɪˈnɪə.rɪŋ/",
+        "back": "Leo núi",
+        "known": false
+      },
+      {
+        "id": "id_0j8okkq",
+        "front": "Volleyball /ˈvɒl.i.bɔːl/",
+        "back": "Bóng chuyền",
+        "known": false
+      },
+      {
+        "id": "id_m0kwqg9",
+        "front": "Weightlifting /ˈweɪtˌlɪf.tɪŋ/",
+        "back": "Cử tạ",
+        "known": false
+      },
+      {
+        "id": "id_3o3dsff",
+        "front": "Badminton racquet /ˈbæd.mɪn.tən/ /ˈræk.ɪt/",
+        "back": "Vợt cầu lông",
+        "known": false
+      },
+      {
+        "id": "id_m45pe0f",
+        "front": "Boxing glove /ˈbɑk·sɪŋ ˌɡlʌv/",
+        "back": "Găng tay đấm bốc",
+        "known": false
+      },
+      {
+        "id": "id_xduvh07",
+        "front": "Hockey stick /ˈhɒk.i/ /stɪk/",
+        "back": "Gậy chơi khúc côn cầu",
+        "known": false
+      },
+      {
+        "id": "id_eqyxycn",
+        "front": "Running shoes /ˈrʌn.ɪŋ ˌʃuː/",
+        "back": "Giày chạy",
+        "known": false
+      },
+      {
+        "id": "id_km6gjyl",
+        "front": "Baseball bat /ˈbeɪs.bɔːl/ /bæt/",
+        "back": "Gậy bóng chày",
+        "known": false
+      },
+      {
+        "id": "id_fnytz96",
+        "front": "Rugby ball /ˈrʌɡ.bi ˌbɔːl/",
+        "back": "Quả bóng bầu dục",
+        "known": false
+      },
+      {
+        "id": "id_9lv1wh9",
+        "front": "Golf club /ˈɡɒlf ˌklʌb/",
+        "back": "Gậy đánh gôn",
+        "known": false
+      },
+      {
+        "id": "id_7aastwu",
+        "front": "Pool cue /puːl/ /kjuː/",
+        "back": "Gậy chơi bi-a",
+        "known": false
+      },
+      {
+        "id": "id_nhezxl8",
+        "front": "Ice skates /ˈaɪs ˌskeɪt/",
+        "back": "Giầy trượt băng",
+        "known": false
+      },
+      {
+        "id": "id_mr4uldn",
+        "front": "Tennis racquet /ˈten.ɪs/ /ˈræk.ɪt/",
+        "back": "Vợt tennis",
+        "known": false
+      },
+      {
+        "id": "id_kbchcjl",
+        "front": "Ice rink /ˈaɪs ˌrɪŋk/",
+        "back": "Sân trượt băng",
+        "known": false
+      },
+      {
+        "id": "id_jol33sm",
+        "front": "Boxing ring /ˈbɒk.sɪŋ ˌrɪŋ/",
+        "back": "Võ đài quyền anh",
+        "known": false
+      },
+      {
+        "id": "id_2q41f4r",
+        "front": "Swimming pool /ˈswɪm.ɪŋ ˌpuːl/",
+        "back": "Hồ bơi",
+        "known": false
+      },
+      {
+        "id": "id_nkvjoc2",
+        "front": "Football pitch /ˈfʊt.bɔːl/ /pɪtʃ/",
+        "back": "Sân bóng đá",
+        "known": false
+      },
+      {
+        "id": "id_lh14e9p",
+        "front": "Squash court /skwɒʃ/ /kɔːt/",
+        "back": "Sân chơi bóng quần",
+        "known": false
+      },
+      {
+        "id": "id_jaw93an",
+        "front": "Running track /ˈrʌn.ɪŋ/ /træk/",
+        "back": "Đường chạy đua",
+        "known": false
+      },
+      {
+        "id": "id_misqpex",
+        "front": "League table /liːɡ/ /ˈteɪ.bəl/",
+        "back": "Bảng xếp hạng",
+        "known": false
+      },
+      {
+        "id": "id_y6veyzs",
+        "front": "Olympic Games /əˈlɪm.pɪks/",
+        "back": "Thế vận hội Olympic",
+        "known": false
+      },
+      {
+        "id": "id_q88z7vc",
+        "front": "Umpire /ˈʌm.paɪər/",
+        "back": "Trọng tài",
+        "known": false
+      },
+      {
+        "id": "id_tndaq4c",
+        "front": "Opponent /əˈpəʊ.nənt/",
+        "back": "Đối thủ",
+        "known": false
+      },
+      {
+        "id": "id_ins256s",
+        "front": "Spectator /spekˈteɪ.tər/",
+        "back": "Khán giả",
+        "known": false
+      },
+      {
+        "id": "id_zprze33",
+        "front": "Quarter-final /ˌkwɔːr.t̬ɚˈfaɪ.nəl/",
+        "back": "Tứ kết",
+        "known": false
+      },
+      {
+        "id": "id_wj1mh1j",
+        "front": "Semi-final /ˌsem.iˈfaɪ.nəl/",
+        "back": "Bán kết",
+        "known": false
+      },
+      {
+        "id": "id_2v2r2xk",
+        "front": "To play at home",
+        "back": "Chơi sân nhà",
+        "known": false
+      },
+      {
+        "id": "id_7kta4ua",
+        "front": "To play away",
+        "back": "Chơi sân khách",
+        "known": false
+      },
+      {
+        "id": "id_c6fq62m",
+        "front": "Break / set the world record",
+        "back": "Phá kỷ lục",
+        "known": false
+      },
+      {
+        "id": "id_cgjjw7x",
+        "front": "Commit a foul",
+        "back": "Phạm lỗi",
+        "known": false
+      },
+      {
+        "id": "id_mi4epql",
+        "front": "Promote team spirit",
+        "back": "Thúc đẩy tinh thần đồng đội",
+        "known": false
+      },
+      {
+        "id": "id_zwfllc0",
+        "front": "To win the championship",
+        "back": "Giành ngôi vô địch",
+        "known": false
+      },
+      {
+        "id": "id_wkfxqje",
+        "front": "To reach / be at fever pitch",
+        "back": "Không khí hào hứng, lên “cơn sốt”",
+        "known": false
+      },
+      {
+        "id": "id_qo435k8",
+        "front": "Rapturous / thunderous applause",
+        "back": "Tràng vỗ tay cuồng nhiệt/ to như sấm",
+        "known": false
+      },
+      {
+        "id": "id_g4c8xj7",
+        "front": "Fierce / intense competition",
+        "back": "Sự cạnh tranh khốc liệt",
+        "known": false
+      },
+      {
+        "id": "id_ukrsnaz",
+        "front": "Experience good physical and mental health",
+        "back": "Trải nghiệm sức khỏe thể chất và tinh thần tốt",
+        "known": false
+      },
+      {
+        "id": "id_whw1iry",
+        "front": "The most outstanding athlete title",
+        "back": "Danh hiệu Vận Động Viên Xuất Sắc Nhất",
+        "known": false
+      },
+      {
+        "id": "id_08xgpa9",
+        "front": "Defend the championship title",
+        "back": "Bảo vệ danh hiệu vô địch",
+        "known": false
+      },
+      {
+        "id": "id_446n02g",
+        "front": "Deal with and overcome any setbacks they may face",
+        "back": "Đối phó và vượt qua mọi thất bại mà họ có thể gặp phải",
+        "known": false
+      },
+      {
+        "id": "id_bmbuy0s",
+        "front": "Enhance my state of health",
+        "back": "Nâng cao thể chất",
+        "known": false
+      },
+      {
+        "id": "id_q8qtjvx",
+        "front": "The ball is in your court",
+        "back": "Quyết định / trách nhiệm của bạn để làm một cái gì đó",
+        "known": false
+      },
+      {
+        "id": "id_ypxwwe9",
+        "front": "Across the board",
+        "back": "Công bằng cho mọi người",
+        "known": false
+      },
+      {
+        "id": "id_e5s36wz",
+        "front": "At this stage in the game",
+        "back": "Tại thời điểm này",
+        "known": false
+      },
+      {
+        "id": "id_w6kasqn",
+        "front": "Give one a run for one’s money",
+        "back": "Cố gắng tốt nhất để chiến thắng ai đó",
+        "known": false
+      },
+      {
+        "id": "id_pgnwk01",
+        "front": "Blow the competition away",
+        "back": "Giành chiến thắng một cách dễ dàng",
+        "known": false
+      },
+      {
+        "id": "id_axjcgt9",
+        "front": "Hit below the belt",
+        "back": "Làm hoặc nói điều gì đó rất không công bằng hay độc ác",
+        "known": false
+      },
+      {
+        "id": "id_l5xxu7y",
+        "front": "Go to bat for someone",
+        "back": "Bảo vệ một ai đó",
+        "known": false
+      },
+      {
+        "id": "id_cu1a9rb",
+        "front": "Bark up the wrong tree",
+        "back": "Bạn chọn sai người hoặc ý tưởng",
+        "known": false
+      },
+      {
+        "id": "id_u1diw9z",
+        "front": "Call the shots",
+        "back": "Đưa ra quyết định",
+        "known": false
+      },
+      {
+        "id": "id_7pi3ksd",
+        "front": "Down to the wire",
+        "back": "Đúng lúc kết thúc",
+        "known": false
+      },
+      {
+        "id": "id_4p8qxsx",
+        "front": "To master something",
+        "back": "Thành thạo điều gì đó",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Music",
+    "cards": [
+      {
+        "id": "id_x4gd1hz",
+        "front": "Acoustic /əˈkuːstɪks/",
+        "back": "Nhạc Acoustic (những bản nhạc được tạo ra bằng nhạc cụ)",
+        "known": false
+      },
+      {
+        "id": "id_or87tva",
+        "front": "Jazz /dʒæz/",
+        "back": "Nhạc Jazz",
+        "known": false
+      },
+      {
+        "id": "id_8bd7gv8",
+        "front": "Orchestra /ˈɔːrkɪstrə/",
+        "back": "Nhạc giao hưởng",
+        "known": false
+      },
+      {
+        "id": "id_trvsvdk",
+        "front": "Symphony /ˈsɪmfəni/",
+        "back": "Nhạc giao hưởng",
+        "known": false
+      },
+      {
+        "id": "id_59bh3d7",
+        "front": "Classical /ˈklæsɪkl/",
+        "back": "Nhạc cổ điển",
+        "known": false
+      },
+      {
+        "id": "id_4opl6ec",
+        "front": "Opera /ˈɑːprə/",
+        "back": "Nhạc thính phòng",
+        "known": false
+      },
+      {
+        "id": "id_97b2jaa",
+        "front": "Dance /dæns/",
+        "back": "Nhạc nhảy",
+        "known": false
+      },
+      {
+        "id": "id_ny6yg7u",
+        "front": "Electronic /ɪˌlekˈtrɑːnɪk/",
+        "back": "Nhạc điện tử",
+        "known": false
+      },
+      {
+        "id": "id_3nt1njw",
+        "front": "Lo-fi (Low fidelity) /ləʊ fɪˈdeləti/",
+        "back": "Nhạc chứa một số lỗi kỹ thuật nhỏ",
+        "known": false
+      },
+      {
+        "id": "id_4gotme0",
+        "front": "Epic music /ˈepɪk ˈmjuːzɪk/",
+        "back": "Nhạc không lời, thường dùng làm nhạc nền phim",
+        "known": false
+      },
+      {
+        "id": "id_n5q9t8u",
+        "front": "Hymn /hɪm/",
+        "back": "Thánh ca",
+        "known": false
+      },
+      {
+        "id": "id_qaifjm8",
+        "front": "Heavy metal /ˌhevi ˈmetl/",
+        "back": "Nhạc rock mạnh",
+        "known": false
+      },
+      {
+        "id": "id_2uqb67i",
+        "front": "R&B (rhythm-and-blues) /ˈrɪðəm ənd bluːz/",
+        "back": "Nhạc R&B (Jazz + Blues + nhạc phúc âm)",
+        "known": false
+      },
+      {
+        "id": "id_cw9nmim",
+        "front": "Theme song /θiːm sɔːŋ/",
+        "back": "Nhạc nền",
+        "known": false
+      },
+      {
+        "id": "id_rkp1ylo",
+        "front": "National anthem /ˌnæʃ.ən.əl ˈæn.θəm/",
+        "back": "Quốc ca",
+        "known": false
+      },
+      {
+        "id": "id_ppnca1g",
+        "front": "Accordion /əˈkɔːrdiən/",
+        "back": "Đàn phong cầm",
+        "known": false
+      },
+      {
+        "id": "id_6n4a77q",
+        "front": "Electronic keyboard /ɪˌlekˈtrɑːnɪk /ˈkiːbɔːrd/",
+        "back": "Đàn phím điện",
+        "known": false
+      },
+      {
+        "id": "id_vx67vhh",
+        "front": "Organ /ˈɔːrɡən/",
+        "back": "Đàn Organ",
+        "known": false
+      },
+      {
+        "id": "id_9su3gga",
+        "front": "Piano /piˈænəʊ/",
+        "back": "Đàn dương cầm",
+        "known": false
+      },
+      {
+        "id": "id_sl63nf9",
+        "front": "Horn /hɔːrn/",
+        "back": "Kèn co",
+        "known": false
+      },
+      {
+        "id": "id_bucgzql",
+        "front": "Trombone /trɑːmˈbəʊn/",
+        "back": "Kèn Trombone",
+        "known": false
+      },
+      {
+        "id": "id_mesjb7v",
+        "front": "Trumpet /ˈtrʌmpɪt/",
+        "back": "Kèn trumpet",
+        "known": false
+      },
+      {
+        "id": "id_th7c0ge",
+        "front": "Tuba /ˈtuːbə/",
+        "back": "Kèn tuba",
+        "known": false
+      },
+      {
+        "id": "id_wy7fn1t",
+        "front": "Clarinet /ˌklærəˈnet/",
+        "back": "Kèn clarinet",
+        "known": false
+      },
+      {
+        "id": "id_2sfwned",
+        "front": "Flute /fluːt/",
+        "back": "Sáo tây",
+        "known": false
+      },
+      {
+        "id": "id_l3zaz0c",
+        "front": "Harmonica (mouth organ) /hɑːrˈmɑːnɪkə/",
+        "back": "Kèn Harmonica",
+        "known": false
+      },
+      {
+        "id": "id_lx0dxy1",
+        "front": "Recorder /rɪˈkɔːrdər/",
+        "back": "Tiêu",
+        "known": false
+      },
+      {
+        "id": "id_qdqde60",
+        "front": "Saxophone /ˈsæksəfəʊn/",
+        "back": "Kèn saxophone",
+        "known": false
+      },
+      {
+        "id": "id_d6rmvnr",
+        "front": "Bass drum /ˌbeɪs ˈdrʌm/",
+        "back": "Trống bass",
+        "known": false
+      },
+      {
+        "id": "id_sbdswcd",
+        "front": "Drum kit /ˈdrʌm kɪt/",
+        "back": "Dàn trống/bộ trống",
+        "known": false
+      },
+      {
+        "id": "id_pvvvzyc",
+        "front": "Gong /ɡɔːŋ/",
+        "back": "Cồng chiêng",
+        "known": false
+      },
+      {
+        "id": "id_y34kmn1",
+        "front": "Tambourine /ˌtæmbəˈriːn/",
+        "back": "Trống lắc tay",
+        "known": false
+      },
+      {
+        "id": "id_4s3w24t",
+        "front": "Cello /ˈtʃeləʊ/",
+        "back": "Đàn cello",
+        "known": false
+      },
+      {
+        "id": "id_labq7p6",
+        "front": "Harp /hɑːrp/",
+        "back": "Đàn hạc",
+        "known": false
+      },
+      {
+        "id": "id_jlxsc6y",
+        "front": "Violin /ˌvaɪəˈlɪn/",
+        "back": "Đàn violin",
+        "known": false
+      },
+      {
+        "id": "id_5x9lzav",
+        "front": "Zither /ˈzɪðər/",
+        "back": "Đàn tranh",
+        "known": false
+      },
+      {
+        "id": "id_ujm81aj",
+        "front": "Ukulele /ˌjuːkəˈleɪli/",
+        "back": "Đàn ukulele",
+        "known": false
+      },
+      {
+        "id": "id_hpq0w0l",
+        "front": "Amp /ˈæm.plɪ.faɪ.ər/",
+        "back": "Bộ khuếch đại âm thanh",
+        "known": false
+      },
+      {
+        "id": "id_863aelx",
+        "front": "Record player /ˈrek.ɔːd ˌpleɪ.ər/",
+        "back": "Máy thu âm",
+        "known": false
+      },
+      {
+        "id": "id_k9r0v65",
+        "front": "Headphones /ˈhed.fəʊnz/",
+        "back": "Tai nghe",
+        "known": false
+      },
+      {
+        "id": "id_oljtu6r",
+        "front": "Music stand /ˈmjuː.zɪk/ /stænd/",
+        "back": "Giá để bản nhạc",
+        "known": false
+      },
+      {
+        "id": "id_nrndug9",
+        "front": "Stereo system /ˈster.i.əʊ/ /ˈsɪs.təm/",
+        "back": "Dàn âm thanh nổi",
+        "known": false
+      },
+      {
+        "id": "id_7efiou6",
+        "front": "Saxophonist /sækˈsɒf.ən.ɪst/",
+        "back": "Người thổi kèn saxophone",
+        "known": false
+      },
+      {
+        "id": "id_yv62ljy",
+        "front": "Soprano /səˈprɑː.nəʊ/",
+        "back": "Giọng nữ trầm",
+        "known": false
+      },
+      {
+        "id": "id_bqx4i9p",
+        "front": "Mezze soprano /Mezze səˈprænəʊ/",
+        "back": "Giọng nữ trung",
+        "known": false
+      },
+      {
+        "id": "id_fz50gq2",
+        "front": "Baritone /ˈbærɪtəʊn/",
+        "back": "Giọng nam trung",
+        "known": false
+      },
+      {
+        "id": "id_cdgetsm",
+        "front": "Bass /beɪs/",
+        "back": "Giọng nam trầm",
+        "known": false
+      },
+      {
+        "id": "id_0ar6ckm",
+        "front": "Conductor /kənˈdʌktər/",
+        "back": "Nhạc trưởng",
+        "known": false
+      },
+      {
+        "id": "id_4zm31e7",
+        "front": "Brass band /ˌbrɑːs ˈbænd/",
+        "back": "Ban nhạc kèn đồng",
+        "known": false
+      },
+      {
+        "id": "id_d4g4ord",
+        "front": "Concert band /ˈkɒn.sət ˈbænd/",
+        "back": "Ban nhạc biểu diễn trong buổi hòa nhạc",
+        "known": false
+      },
+      {
+        "id": "id_c1y8jw8",
+        "front": "String quartet /ˌstrɪŋ kwɔːˈtet/",
+        "back": "Nhóm nhạc tứ tấu đàn dây",
+        "known": false
+      },
+      {
+        "id": "id_aehpuua",
+        "front": "Clef /klef/",
+        "back": "Khóa nhạc (Sol, Fa, Đô)",
+        "known": false
+      },
+      {
+        "id": "id_e7ldb03",
+        "front": "Chord /kɔːrd/",
+        "back": "Hợp âm, nhiều nốt chồng lên nhau",
+        "known": false
+      },
+      {
+        "id": "id_6mre08e",
+        "front": "Dynamics /daɪˈnæmɪks/",
+        "back": "Cường độ của nốt nhạc",
+        "known": false
+      },
+      {
+        "id": "id_88u66n8",
+        "front": "Meter /ˈmiːtər/",
+        "back": "Nhịp",
+        "known": false
+      },
+      {
+        "id": "id_mfd0uoe",
+        "front": "Prelude /ˈpreljuːd/",
+        "back": "Nhạc dạo",
+        "known": false
+      },
+      {
+        "id": "id_qgnvcs1",
+        "front": "Modulation /ˌmɑːdʒəˈleɪʃn/",
+        "back": "Sự chuyển hợp âm",
+        "known": false
+      },
+      {
+        "id": "id_r8b1x48",
+        "front": "Key signature /kiː ˈsɪɡnətʃər/",
+        "back": "Bộ khóa của bài hát",
+        "known": false
+      },
+      {
+        "id": "id_q54a7p3",
+        "front": "Ornamentation /ˌɔːrnəmenˈteɪʃn/",
+        "back": "Những nốt như dấu luyến, láy",
+        "known": false
+      },
+      {
+        "id": "id_hbvb4ph",
+        "front": "Inspirational /ˌɪn.spəˈreɪ.ʃən.əl/",
+        "back": "Đầy cảm hứng",
+        "known": false
+      },
+      {
+        "id": "id_lqg7srl",
+        "front": "Adagio /əˈdɑː.dʒi.əʊ/",
+        "back": "Chậm, thong thả",
+        "known": false
+      },
+      {
+        "id": "id_i995swh",
+        "front": "Tuneful /ˈtʃuːn.fəl/",
+        "back": "Dễ chịu và du dương",
+        "known": false
+      },
+      {
+        "id": "id_yy1wb4y",
+        "front": "A catchy tune/song",
+        "back": "Giai điệu hoặc bài hát hay, dễ nhớ",
+        "known": false
+      },
+      {
+        "id": "id_p8gy3fn",
+        "front": "To sing out of tune / off-key",
+        "back": "Hát lệch nhịp",
+        "known": false
+      },
+      {
+        "id": "id_27koyx9",
+        "front": "(To be) tone-deaf",
+        "back": "Không thể phân biệt các nốt khác nhau",
+        "known": false
+      },
+      {
+        "id": "id_s1woi9s",
+        "front": "To go on tour",
+        "back": "Đi lưu diễn",
+        "known": false
+      },
+      {
+        "id": "id_9dkijkh",
+        "front": "A massive hit",
+        "back": "Bài hít",
+        "known": false
+      },
+      {
+        "id": "id_5pkt8g8",
+        "front": "To sing along to",
+        "back": "Hát theo",
+        "known": false
+      },
+      {
+        "id": "id_urr8ksg",
+        "front": "Taste in music",
+        "back": "Gu âm nhạc",
+        "known": false
+      },
+      {
+        "id": "id_i5erljg",
+        "front": "Boost / pick up / uplift my energy",
+        "back": "Vực dậy tinh thần",
+        "known": false
+      },
+      {
+        "id": "id_8ic5v2z",
+        "front": "Capture (a wider) audience",
+        "back": "Thu hút đông đảo khán giả",
+        "known": false
+      },
+      {
+        "id": "id_gq3pvc3",
+        "front": "Gravitate towards somebody / something",
+        "back": "Hướng đến, thiên về, chọn",
+        "known": false
+      },
+      {
+        "id": "id_gezz4nx",
+        "front": "Vividly remember somebody",
+        "back": "Nhớ như in",
+        "known": false
+      },
+      {
+        "id": "id_pte59fn",
+        "front": "Part and parcel of something",
+        "back": "Một phần không thể thiếu",
+        "known": false
+      },
+      {
+        "id": "id_k230r1h",
+        "front": "Be into something",
+        "back": "Thích thú một điều gì đó",
+        "known": false
+      },
+      {
+        "id": "id_00w8yce",
+        "front": "To ring a bell",
+        "back": "Mang lại cảm giác quen thuộc",
+        "known": false
+      },
+      {
+        "id": "id_s669avh",
+        "front": "To beat the drum for something",
+        "back": "Ủng hộ điều gì đó",
+        "known": false
+      },
+      {
+        "id": "id_vc4o8ja",
+        "front": "To blow the whistle",
+        "back": "Báo cáo khi ai đó làm gì đó sai trái",
+        "known": false
+      },
+      {
+        "id": "id_bol8fxg",
+        "front": "To blow your own trumpet",
+        "back": "Khoe khoang, tự mãn",
+        "known": false
+      },
+      {
+        "id": "id_jcr9vgh",
+        "front": "To change one’s tune",
+        "back": "Thay đổi quyết định, ý kiến",
+        "known": false
+      },
+      {
+        "id": "id_xjrb205",
+        "front": "For a song",
+        "back": "Bán một món đồ với giá rất rẻ hoặc rất hời",
+        "known": false
+      },
+      {
+        "id": "id_0wbdpom",
+        "front": "Make a song and dance about something",
+        "back": "Khiến điều gì quan trọng hơn bình thường để thu hút sự chú ý",
+        "known": false
+      },
+      {
+        "id": "id_2lokj84",
+        "front": "To hit the right / wrong note",
+        "back": "Làm, nói hoặc viết điều gì phù hợp/không phù hợp hoàn cảnh",
+        "known": false
+      },
+      {
+        "id": "id_y589dnq",
+        "front": "It’s not over till the fat lady sings",
+        "back": "Không có gì chắc chắn cho đến khi mọi thứ kết thúc",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Personality",
+    "cards": [
+      {
+        "id": "id_fe0smd7",
+        "front": "Friendly",
+        "back": "Thân thiện\nExample: Frank was a genuinely friendly guy",
+        "known": false
+      },
+      {
+        "id": "id_t94x3c4",
+        "front": "Honest",
+        "back": "Thật thà, lương thiện\nExample: I did the only right and honest thing",
+        "known": false
+      },
+      {
+        "id": "id_lkl96xe",
+        "front": "Broad-minded / open-minded",
+        "back": "Có tư tưởng rộng rãi, khoáng đạt\nExample: My parents aren't very broad-minded",
+        "known": false
+      },
+      {
+        "id": "id_h1gtyl2",
+        "front": "Intelligent",
+        "back": "Thông minh\nExample: She is a highly intelligent student",
+        "known": false
+      },
+      {
+        "id": "id_1n3drhm",
+        "front": "Ambitious",
+        "back": "Có nhiều tham vọng\nExample: The scope of the book is very ambitious",
+        "known": false
+      },
+      {
+        "id": "id_g44565c",
+        "front": "Humorous",
+        "back": "Hài hước\nExample: It was a humorous and entertaining talk",
+        "known": false
+      },
+      {
+        "id": "id_u84khef",
+        "front": "Introverted",
+        "back": "Hướng nội\nExample: He's so quiet and introverted, but Kay, I like him so much!",
+        "known": false
+      },
+      {
+        "id": "id_xykzy8r",
+        "front": "Bad-tempered",
+        "back": "Nóng tính\nExample: Mary was feeling very bad-tempered",
+        "known": false
+      },
+      {
+        "id": "id_lpgffb3",
+        "front": "Impolite",
+        "back": "Bất lịch sự\nExample: Some people think it is impolite to ask someone’s age",
+        "known": false
+      },
+      {
+        "id": "id_fza94pl",
+        "front": "Cowardly",
+        "back": "Yếu đuối, hèn nhát, sợ sệt\nExample: I'd never felt so cowardly before in my life until that moment.",
+        "known": false
+      },
+      {
+        "id": "id_ph2t6yc",
+        "front": "Boastful",
+        "back": "Khoe khoang, khoác lác\nExample: She tends to be boastful",
+        "known": false
+      },
+      {
+        "id": "id_01uxvdw",
+        "front": "Envious",
+        "back": "Ganh tị, đố kỵ\nExample: I was always envious of my best friend",
+        "known": false
+      },
+      {
+        "id": "id_q6j2qg5",
+        "front": "Dishonest",
+        "back": "Không trung thực\nExample: He achieved his wealth by dishonest means",
+        "known": false
+      },
+      {
+        "id": "id_ob21igs",
+        "front": "Haughty",
+        "back": "Kiêu căng\nExample: She threw him a look of haughty disdain",
+        "known": false
+      },
+      {
+        "id": "id_vqad3vt",
+        "front": "Pessimistic",
+        "back": "Bi quan\nExample: The article ends on a pessimistic note",
+        "known": false
+      },
+      {
+        "id": "id_qn0o0fs",
+        "front": "Headstrong",
+        "back": "Cứng đầu, bướng bỉnh\nExample: I am headstrong and like getting my own way",
+        "known": false
+      },
+      {
+        "id": "id_9ktsv3r",
+        "front": "Bossy",
+        "back": "Hống hách, hách dịch\nExample: She remembers being a rather bossy little girl",
+        "known": false
+      },
+      {
+        "id": "id_krlkvck",
+        "front": "Insolent",
+        "back": "Láo xược\nExample: Her tone grew insolent",
+        "known": false
+      },
+      {
+        "id": "id_80eryq9",
+        "front": "Narrow minded",
+        "back": "Đầu óc hạn hẹp\nExample: I'm frustrated with the narrow-minded view of history this article represents.",
+        "known": false
+      },
+      {
+        "id": "id_devsu2a",
+        "front": "Two-faced",
+        "back": "Người/ tính cách hai mặt\nExample: I soon learned that he was two-faced",
+        "known": false
+      },
+      {
+        "id": "id_jh7sruh",
+        "front": "Strict",
+        "back": "Nghiêm khắc\nExample: He told me in the strictest confidence",
+        "known": false
+      },
+      {
+        "id": "id_t4ofay0",
+        "front": "Gruff",
+        "back": "Thô lỗ cục cằn\nExample: Beneath his gruff exterior, he’s really very kind-hearted",
+        "known": false
+      },
+      {
+        "id": "id_uvygaw6",
+        "front": "An eye for detail",
+        "back": "Cầu toàn / Making sure everything is perfect",
+        "known": false
+      },
+      {
+        "id": "id_e87l025",
+        "front": "Take time to hear what others are saying",
+        "back": "Dành thời gian để nghe những gì người khác đang nói",
+        "known": false
+      },
+      {
+        "id": "id_reovdd6",
+        "front": "A fun person, someone who is the center of activity",
+        "back": "Một người vui vẻ, là trung tâm của mọi hoạt động",
+        "known": false
+      },
+      {
+        "id": "id_9vlmkgf",
+        "front": "Prepared to accept other views or behaviors",
+        "back": "Sẵn sàng chấp nhận các quan điểm hoặc hành vi khác",
+        "known": false
+      },
+      {
+        "id": "id_9f57oxd",
+        "front": "Relaxed and not easily worried about anything",
+        "back": "Thoải mái và không dễ lo lắng về bất cứ điều gì",
+        "known": false
+      },
+      {
+        "id": "id_vq1jqho",
+        "front": "To think of others before yourself",
+        "back": "Nghĩ đến người khác trước chính mình",
+        "known": false
+      },
+      {
+        "id": "id_rxi5uqz",
+        "front": "Believes in one’s own ability or knowledge",
+        "back": "Tin tưởng vào khả năng hoặc kiến thức của chính mình",
+        "known": false
+      },
+      {
+        "id": "id_lizuky6",
+        "front": "To be like often another member of the family",
+        "back": "Giống ai đó trong gia đình",
+        "known": false
+      },
+      {
+        "id": "id_1rsbwjq",
+        "front": "Not easily affected by criticism",
+        "back": "Không dễ bị ảnh hưởng bởi những lời chỉ trích",
+        "known": false
+      },
+      {
+        "id": "id_a9q7ewo",
+        "front": "Have a heart of gold",
+        "back": "Người hiền lành, tốt bụng",
+        "known": false
+      },
+      {
+        "id": "id_wbr7f4h",
+        "front": "Down to Earth",
+        "back": "Người thực tế, khiêm tốn",
+        "known": false
+      },
+      {
+        "id": "id_jkiyuw0",
+        "front": "Underneath the surface, I am paddling like a swan",
+        "back": "Trông bình tĩnh nhưng không thật sự thì không",
+        "known": false
+      },
+      {
+        "id": "id_ag9v1ef",
+        "front": "To hide one’s light under a bushel",
+        "back": "Che giấu tài năng và kỹ năng",
+        "known": false
+      },
+      {
+        "id": "id_vgjlwa8",
+        "front": "A cool fish",
+        "back": "Người không thân thiện, dễ gần",
+        "known": false
+      },
+      {
+        "id": "id_7yt7din",
+        "front": "All things to all people",
+        "back": "Ai đó được lòng tất cả mọi người",
+        "known": false
+      },
+      {
+        "id": "id_1wrx449",
+        "front": "All brawn and no brain",
+        "back": "Đầu óc ngu si tứ chi phát triển",
+        "known": false
+      },
+      {
+        "id": "id_qduvjmq",
+        "front": "Cheap skate",
+        "back": "Keo kiệt",
+        "known": false
+      },
+      {
+        "id": "id_4zi7aze",
+        "front": "Worrywart",
+        "back": "Một ai đó cẩn thận hơn mức cần thiết",
+        "known": false
+      },
+      {
+        "id": "id_g6pfxyf",
+        "front": "A mover and shaker",
+        "back": "Những người có quyền uy, có sức ảnh hưởng trong một lĩnh vực hay hoạt động",
+        "known": false
+      },
+      {
+        "id": "id_9cmi9oa",
+        "front": "A smart cookie",
+        "back": "Người thông minh và tài giỏi",
+        "known": false
+      },
+      {
+        "id": "id_w5xcxvz",
+        "front": "Ugly as sin",
+        "back": "Ai đó xấu xí, không có điểm hấp dẫn",
+        "known": false
+      },
+      {
+        "id": "id_uj7qgbq",
+        "front": "Dead loss",
+        "back": "Kẻ vô tích sự, vô dụng; làm những điều vô ích",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Weather",
+    "cards": [
+      {
+        "id": "id_lnymtnc",
+        "front": "Breeze",
+        "back": "Có cơn gió nhẹ\nExample: It was like a deliciously cool breeze on a warm day",
+        "known": false
+      },
+      {
+        "id": "id_9fylbwf",
+        "front": "Cloudy",
+        "back": "Trời nhiều mây\nExample: I couldn't tell who it was; my eyes were far too cloudy",
+        "known": false
+      },
+      {
+        "id": "id_33aquj7",
+        "front": "Dry",
+        "back": "Khô\nExample: Come in out of the rain and dry off",
+        "known": false
+      },
+      {
+        "id": "id_7tvspnx",
+        "front": "Wet",
+        "back": "Ướt sũng\nExample: I made the floor all wet",
+        "known": false
+      },
+      {
+        "id": "id_7dtndo4",
+        "front": "Foggy",
+        "back": "Có sương mù\nExample: A dark and foggy night",
+        "known": false
+      },
+      {
+        "id": "id_a425t6k",
+        "front": "Gloomy",
+        "back": "Ảm đạm\nExample: She feels so gloomy, yet she does not know why?",
+        "known": false
+      },
+      {
+        "id": "id_665isp1",
+        "front": "Mild / calm (weather)",
+        "back": "Ôn hòa, ấm áp\nExample: Spring brings mild weather after the cold winter",
+        "known": false
+      },
+      {
+        "id": "id_tw9l5il",
+        "front": "Frost",
+        "back": "Băng giá\nExample: There was a hard frost last night",
+        "known": false
+      },
+      {
+        "id": "id_wimnczl",
+        "front": "Haze",
+        "back": "Màn sương mỏng, thường gây ra bởi sức nóng\nExample: The sun now had a faint golden haze around it",
+        "known": false
+      },
+      {
+        "id": "id_lx3tzoa",
+        "front": "Overcast",
+        "back": "Âm u\nExample: The sky was overcast and Hoa’s team needed to use artificial light",
+        "known": false
+      },
+      {
+        "id": "id_kkm0rcf",
+        "front": "Unpredictable weather",
+        "back": "Thời tiết không đoán trước được\nExample: The weather there can be unpredictable",
+        "known": false
+      },
+      {
+        "id": "id_23bswxg",
+        "front": "Downpour",
+        "back": "Mưa lớn\nExample: We got caught in a torrential downpour",
+        "known": false
+      },
+      {
+        "id": "id_h3u5rlf",
+        "front": "Rainfall",
+        "back": "Lượng mưa\nExample: Heavy rainfall in the mountains caused the floods",
+        "known": false
+      },
+      {
+        "id": "id_qpjy37n",
+        "front": "Torrential rain",
+        "back": "Mưa như thác đổ\nExample: A torrential rain soaked the festival",
+        "known": false
+      },
+      {
+        "id": "id_rfgqm07",
+        "front": "Baking hot",
+        "back": "Nóng như thiêu\nExample: We waited for hours in the baking hot",
+        "known": false
+      },
+      {
+        "id": "id_7dfafqg",
+        "front": "Fahrenheit",
+        "back": "Độ F\nExample: Temperatures tomorrow will rise to around seventy degrees Fahrenheit",
+        "known": false
+      },
+      {
+        "id": "id_23itl73",
+        "front": "Celsius",
+        "back": "Độ C\nExample: It will be a mild night, around nine degrees Celsius",
+        "known": false
+      },
+      {
+        "id": "id_rjjrkiz",
+        "front": "Thermometer",
+        "back": "Nhiệt kế\nExample: Use a meat thermometer to monitor the temperature",
+        "known": false
+      },
+      {
+        "id": "id_ks84kru",
+        "front": "Frosty",
+        "back": "Đầy sương giá\nExample: It’s frosty outside",
+        "known": false
+      },
+      {
+        "id": "id_7eygp4a",
+        "front": "Balmy",
+        "back": "Thời tiết dễ chịu\nExample: The balmy days of late summer",
+        "known": false
+      },
+      {
+        "id": "id_toljkc1",
+        "front": "Rainbow",
+        "back": "Cầu vồng\nExample: Look! There's a rainbow!",
+        "known": false
+      },
+      {
+        "id": "id_2lpdc2k",
+        "front": "Tornado",
+        "back": "Lốc xoáy\nExample: The tornado ripped along the coastline",
+        "known": false
+      },
+      {
+        "id": "id_amy12in",
+        "front": "Whirlwind",
+        "back": "Gió lốc\nExample: A whirlwind blew through the town",
+        "known": false
+      },
+      {
+        "id": "id_xeit3oo",
+        "front": "Blustery wind",
+        "back": "Gió lộng\nExample: It's a cold night here, with intermittent rain showers and a blustery wind",
+        "known": false
+      },
+      {
+        "id": "id_sp2yyvx",
+        "front": "Drizzle",
+        "back": "Mưa phùn\nExample: Boston will be cloudy with patchy drizzle",
+        "known": false
+      },
+      {
+        "id": "id_qci5kr8",
+        "front": "Lightning",
+        "back": "Tia chớp\nExample: She's afraid of the flashes lightning",
+        "known": false
+      },
+      {
+        "id": "id_4c1okw9",
+        "front": "Snowstorm",
+        "back": "Cơn bão tuyết\nExample: The plumbing froze in the heaviest snowstorm of the year",
+        "known": false
+      },
+      {
+        "id": "id_o1hlx73",
+        "front": "Hurricane",
+        "back": "Siêu bão\nExample: A powerful hurricane hit the Florida coast",
+        "known": false
+      },
+      {
+        "id": "id_3006eef",
+        "front": "Lousy / Dreadful weather",
+        "back": "Thời tiết xấu\nExample: Dreadful weather dogged rehearsals.",
+        "known": false
+      },
+      {
+        "id": "id_rhzedtb",
+        "front": "Unbroken sunshine",
+        "back": "Chỉ có nắng, bầu trời không có mây\nExample: We've had ten days of almost unbroken sunshine",
+        "known": false
+      },
+      {
+        "id": "id_jn39uiv",
+        "front": "Harsh / Severe weather",
+        "back": "Thời tiết khắc nghiệt\nExample: Most of their equipment was inadequate for the severe weather",
+        "known": false
+      },
+      {
+        "id": "id_tt7th22",
+        "front": "A let up in the rain",
+        "back": "Khoảng thời gian tạnh mưa giữa cơn\nExample: When the rain lets up we'll go for a walk",
+        "known": false
+      },
+      {
+        "id": "id_hodr8wo",
+        "front": "It’s raining cats and dogs",
+        "back": "Mưa rất lớn",
+        "known": false
+      },
+      {
+        "id": "id_67nbtbm",
+        "front": "Every cloud has a silver lining",
+        "back": "Sau cơn mưa trời lại sáng",
+        "known": false
+      },
+      {
+        "id": "id_buvkdrr",
+        "front": "Sunshine and showers",
+        "back": "Thời tiết nắng ấm và mưa ẩm nhẹ",
+        "known": false
+      },
+      {
+        "id": "id_g2ka3z6",
+        "front": "Calm before the storm",
+        "back": "Sự bình yên trước cơn bão",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Career",
+    "cards": [
+      {
+        "id": "id_z9jp3sx",
+        "front": "Bodyguard",
+        "back": "Vệ sĩ\nExample: I work as a bodyguard.",
+        "known": false
+      },
+      {
+        "id": "id_hgdsbe0",
+        "front": "Judge",
+        "back": "Thẩm phán\nExample: I am in no position to judge.",
+        "known": false
+      },
+      {
+        "id": "id_vftpw39",
+        "front": "Forensic scientist",
+        "back": "Nhân viên pháp y\nExample: At one stage a forensic scientist in the witness box had a chart.",
+        "known": false
+      },
+      {
+        "id": "id_52bv80a",
+        "front": "Barrister",
+        "back": "Luật sư bào chữa\nExample: She chose a career as a barrister.",
+        "known": false
+      },
+      {
+        "id": "id_ciotwv9",
+        "front": "Security officer",
+        "back": "Nhân viên an ninh\nExample: The boy was shot dead by a security officer who had no charges brought against him.",
+        "known": false
+      },
+      {
+        "id": "id_0gomopk",
+        "front": "Solicitor",
+        "back": "Cố vấn luật pháp\nExample: Her solicitor said she may take legal action.",
+        "known": false
+      },
+      {
+        "id": "id_iqdrjdt",
+        "front": "Detective",
+        "back": "Thám tử\nExample: I hired a private detective to find out who was responsible.",
+        "known": false
+      },
+      {
+        "id": "id_1bm23wv",
+        "front": "Lawyer",
+        "back": "Luật sư\nExample: I hope you have a good lawyer.",
+        "known": false
+      },
+      {
+        "id": "id_eb2pvsq",
+        "front": "Programmer",
+        "back": "Lập trình viên\nExample: Bob is a software computer programmer.",
+        "known": false
+      },
+      {
+        "id": "id_odo8gyg",
+        "front": "Web developer",
+        "back": "Nhân viên phát triển mạng\nExample: She works as a web developer for a financial services company.",
+        "known": false
+      },
+      {
+        "id": "id_yrnd7ya",
+        "front": "Database administrator",
+        "back": "Nhân viên quản lý dữ liệu\nExample: The table space is created by database administrator.",
+        "known": false
+      },
+      {
+        "id": "id_usdrgcs",
+        "front": "Computer software engineer",
+        "back": "Kỹ sư phần mềm máy tính\nExample: Our software engineers work alongside our design engineers and motors engineers.",
+        "known": false
+      },
+      {
+        "id": "id_xsd2d5g",
+        "front": "UX designer",
+        "back": "Người thiết kế trải nghiệm người dùng\nExample: Crafting a compelling UX designer bio is a powerful way to showcase your unique value proposition.",
+        "known": false
+      },
+      {
+        "id": "id_26giwy9",
+        "front": "Systems analyst",
+        "back": "Chuyên viên phân tích hệ thống\nExample: As a systems analyst, you will be at the center of developing this software.",
+        "known": false
+      },
+      {
+        "id": "id_yv2o6n4",
+        "front": "IT security specialist",
+        "back": "Chuyên viên an ninh mạng\nExample: Security Specialists develop and implement the security measures their organization needs to protect their information assets in a secure system.",
+        "known": false
+      },
+      {
+        "id": "id_8a4gq7t",
+        "front": "IT business analyst",
+        "back": "Chuyên viên phân tích yêu cầu doanh nghiệp\nExample: But travel trade groups and business analysts put it lower.",
+        "known": false
+      },
+      {
+        "id": "id_c6nbpen",
+        "front": "Accountant",
+        "back": "Kế toán\nExample: I am an accountant.",
+        "known": false
+      },
+      {
+        "id": "id_d6c56w1",
+        "front": "Actuary",
+        "back": "Chuyên viên thống kê\nExample: Without his job as an insurance actuary the 66-year-old Schmidt has no identity.",
+        "known": false
+      },
+      {
+        "id": "id_xilbw0y",
+        "front": "Investment analyst",
+        "back": "Nhà phân tích đầu tư\nExample: Constance's husband is a financial analyst.",
+        "known": false
+      },
+      {
+        "id": "id_z173dw7",
+        "front": "Financial adviser",
+        "back": "Cố vấn tài chính\nExample: Her independent financial adviser had died a short time before and she had no one to consult.",
+        "known": false
+      },
+      {
+        "id": "id_oay9osh",
+        "front": "Management consultant",
+        "back": "Cố vấn cho ban giám đốc\nExample: He spent four years as a management consultant.",
+        "known": false
+      },
+      {
+        "id": "id_o7crog6",
+        "front": "Businessman",
+        "back": "Doanh nhân\nExample: A Malaysian businessman is the biggest investor.",
+        "known": false
+      },
+      {
+        "id": "id_oslrheg",
+        "front": "Telephonist",
+        "back": "Nhân viên trực điện thoại\nExample: He was working as a telephonist.",
+        "known": false
+      },
+      {
+        "id": "id_ylfk2ea",
+        "front": "Customer service representative",
+        "back": "Người đại diện dịch vụ hỗ trợ khách hàng\nExample: If you call our Customer Service Department, a Customer Service Representative will try to resolve your concern.",
+        "known": false
+      },
+      {
+        "id": "id_vyr67x2",
+        "front": "Advertising executive",
+        "back": "Nhân viên quảng cáo\nExample: The advertising executive was praised for his innovative ideas.",
+        "known": false
+      },
+      {
+        "id": "id_ruqui96",
+        "front": "Economist",
+        "back": "Nhà kinh tế học\nExample: He is a good economist with a strong pedigree and wide experience of the world economy.",
+        "known": false
+      },
+      {
+        "id": "id_8snr3bo",
+        "front": "Doctor",
+        "back": "Bác sĩ\nExample: I'll make him go and see the doctor.",
+        "known": false
+      },
+      {
+        "id": "id_yfurc8u",
+        "front": "Physiotherapist",
+        "back": "Nhà trị liệu vật lý\nExample: The physiotherapist gave her some exercises to do at home.",
+        "known": false
+      },
+      {
+        "id": "id_yktlfw2",
+        "front": "Pharmacist",
+        "back": "Dược sĩ\nExample: She trained as a pharmacist.",
+        "known": false
+      },
+      {
+        "id": "id_41pr7wo",
+        "front": "Veterinary surgeon",
+        "back": "Bác sĩ thú y\nExample: Brucellosis and the veterinary surgeon.",
+        "known": false
+      },
+      {
+        "id": "id_inlyzwp",
+        "front": "Midwife",
+        "back": "Bà đỡ/ nữ hộ sinh\nExample: The midwife weighed the new baby.",
+        "known": false
+      },
+      {
+        "id": "id_hubma4s",
+        "front": "Surgeon",
+        "back": "Bác sĩ phẫu thuật\nExample: I discussed the operation with the surgeon.",
+        "known": false
+      },
+      {
+        "id": "id_a8r15ij",
+        "front": "Social worker",
+        "back": "Nhân viên công tác xã hội\nExample: The man claimed to be a social worker and the old woman believed him.",
+        "known": false
+      },
+      {
+        "id": "id_o5cf2ht",
+        "front": "Vet",
+        "back": "Bác sĩ thú y\nExample: I think we'll have to call the vet.",
+        "known": false
+      },
+      {
+        "id": "id_ngjsygr",
+        "front": "Dentist",
+        "back": "Nha sĩ\nExample: He is studying to be a dentist.",
+        "known": false
+      },
+      {
+        "id": "id_zo9ju2d",
+        "front": "Orthoptist",
+        "back": "Bác sĩ chuyên điều trị tật mắt\nExample: She commutes daily to her job as an orthoptist at the Manchester Eye Hospital.",
+        "known": false
+      },
+      {
+        "id": "id_3folfyz",
+        "front": "Biologist",
+        "back": "Nhà sinh vật học\nExample: My brother is a biologist.",
+        "known": false
+      },
+      {
+        "id": "id_4ydwphd",
+        "front": "Physicist",
+        "back": "Nhà vật lý học\nExample: I read the report by a physicist studying the effects of heat.",
+        "known": false
+      },
+      {
+        "id": "id_wybd18q",
+        "front": "Meteorologist",
+        "back": "Nhà khí tượng học\nExample: I am no meteorologist, but that sky indicates rain.",
+        "known": false
+      },
+      {
+        "id": "id_yj03kvo",
+        "front": "Astronomer",
+        "back": "Nhà thiên văn học\nExample: A new star attracted the notice of the astronomer.",
+        "known": false
+      },
+      {
+        "id": "id_c3kqy9s",
+        "front": "Psychiatrist",
+        "back": "Nhà tâm thần học\nExample: He is a prominent psychiatrist.",
+        "known": false
+      },
+      {
+        "id": "id_6jl4vhe",
+        "front": "Botanist",
+        "back": "Nhà thực vật học\nExample: He is a botanist and a collector of rare plants.",
+        "known": false
+      },
+      {
+        "id": "id_wjj4zht",
+        "front": "Lab technician",
+        "back": "Nhân viên phòng thí nghiệm\nExample: He portrayed a lab technician working at a crime scene.",
+        "known": false
+      },
+      {
+        "id": "id_19xihm4",
+        "front": "HR manager",
+        "back": "Trưởng phòng nhân sự\nExample: It's been three years since I finished A higher Diploma in Human resources management course.",
+        "known": false
+      },
+      {
+        "id": "id_rk23r79",
+        "front": "Personal assistant",
+        "back": "Thư ký riêng\nExample: Maybe the Queen will make you a personal assistant to her, like I am.",
+        "known": false
+      },
+      {
+        "id": "id_tj487kc",
+        "front": "Project manager",
+        "back": "Quản lý dự án\nExample: You lashed out at your project manager, which was completely out of line.",
+        "known": false
+      },
+      {
+        "id": "id_bspt2ll",
+        "front": "Recruitment consultant",
+        "back": "Chuyên viên tư vấn tuyển dụng\nExample: You're a prospective partner, not a recruitment consultant.",
+        "known": false
+      },
+      {
+        "id": "id_smk1ngi",
+        "front": "Receptionist",
+        "back": "Lễ tân\nExample: I asked the receptionist if there was a message for me.",
+        "known": false
+      },
+      {
+        "id": "id_7lm6yj6",
+        "front": "Cook",
+        "back": "Đầu bếp\nExample: I'm a good cook.",
+        "known": false
+      },
+      {
+        "id": "id_avqb3kh",
+        "front": "Chef",
+        "back": "Bếp trưởng\nExample: He is training to be a chef.",
+        "known": false
+      },
+      {
+        "id": "id_5mnkow7",
+        "front": "Bartender",
+        "back": "Nhân viên pha chế\nExample: I'll settle up with the bartender, then let's go.",
+        "known": false
+      },
+      {
+        "id": "id_w3dyrip",
+        "front": "Waiter/Waitress",
+        "back": "Bồi bàn nam / nữ\nExample: The waitress brought their order.",
+        "known": false
+      },
+      {
+        "id": "id_ygxkju0",
+        "front": "Hotel porter",
+        "back": "Nhân viên chuyển hành lý tại khách sạn\nExample: Their luggage was taken to the train by one of the hotel porters.",
+        "known": false
+      },
+      {
+        "id": "id_jt656o2",
+        "front": "Hotel manager",
+        "back": "Quản lý khách sạn\nExample: I'm a hotel manager on good pay.",
+        "known": false
+      },
+      {
+        "id": "id_uvv1yuk",
+        "front": "Tourist guide",
+        "back": "Hướng dẫn viên du lịch\nExample: Our tour guide showed us around the old town.",
+        "known": false
+      },
+      {
+        "id": "id_il25jrc",
+        "front": "Photographer",
+        "back": "Thợ chụp ảnh\nExample: Who will be the photographer at the wedding?",
+        "known": false
+      },
+      {
+        "id": "id_93l69p2",
+        "front": "Model",
+        "back": "Người mẫu\nExample: I was a fashion model.",
+        "known": false
+      },
+      {
+        "id": "id_fzs3djc",
+        "front": "Composer",
+        "back": "Nhà soạn nhạc\nExample: Mozart was her favorite composer.",
+        "known": false
+      },
+      {
+        "id": "id_l8qbrbv",
+        "front": "Master of Ceremonies (MC)",
+        "back": "Dẫn chương trình truyền hình\nExample: The master of ceremonies introduced the guest of honor.",
+        "known": false
+      },
+      {
+        "id": "id_p2ankso",
+        "front": "Graphic designer",
+        "back": "Người thiết kế đồ họa\nExample: She asked her son, a graphic designer, to create letterheads and stationery.",
+        "known": false
+      },
+      {
+        "id": "id_71wjcty",
+        "front": "Fashion designer",
+        "back": "Nhà thiết kế thời trang\nExample: She's the fashion designer of the moment.",
+        "known": false
+      },
+      {
+        "id": "id_2ibdxjm",
+        "front": "Choreographer",
+        "back": "Biên đạo múa\nExample: The style, by intention, echoes that of the late, great choreographer Fosse.",
+        "known": false
+      },
+      {
+        "id": "id_q9vhj4s",
+        "front": "Playwright",
+        "back": "Nhà soạn kịch\nExample: Gwyn Thomas was a famous playwright.",
+        "known": false
+      },
+      {
+        "id": "id_vtx02qx",
+        "front": "Film director",
+        "back": "Đạo diễn phim\nExample: She would like to become a film director someday.",
+        "known": false
+      },
+      {
+        "id": "id_mouj7e3",
+        "front": "Sculptor",
+        "back": "Nhà điêu khắc\nExample: Of course you can be a great sculptor without being able to draw.",
+        "known": false
+      },
+      {
+        "id": "id_8r9lxki",
+        "front": "To be called for an interview",
+        "back": "Được gọi tới phỏng vấn",
+        "known": false
+      },
+      {
+        "id": "id_x4xv8vl",
+        "front": "To be your own boss",
+        "back": "Có công việc kinh doanh riêng",
+        "known": false
+      },
+      {
+        "id": "id_pddyln1",
+        "front": "A heavy workload",
+        "back": "Khối lượng công việc lớn",
+        "known": false
+      },
+      {
+        "id": "id_cr69lbb",
+        "front": "A high-powered job",
+        "back": "Một công việc quan trọng",
+        "known": false
+      },
+      {
+        "id": "id_c7dbzf6",
+        "front": "To meet a deadline",
+        "back": "Hoàn thành công việc đúng hạn",
+        "known": false
+      },
+      {
+        "id": "id_v0vz5ez",
+        "front": "To be stuck behind a desk",
+        "back": "Mắc kẹt trong công việc bàn giấy buồn chán",
+        "known": false
+      },
+      {
+        "id": "id_z0e11bw",
+        "front": "To be well paid",
+        "back": "Được trả lương hậu hĩnh",
+        "known": false
+      },
+      {
+        "id": "id_j6e33ke",
+        "front": "Leadership qualities",
+        "back": "Tố chất lãnh đạo",
+        "known": false
+      },
+      {
+        "id": "id_c0kbpz3",
+        "front": "Skeleton staff",
+        "back": "Lượng nhân viên tối thiểu",
+        "known": false
+      },
+      {
+        "id": "id_s7dz8ll",
+        "front": "A stable monthly paycheck",
+        "back": "Tiền lương hàng tháng ổn định",
+        "known": false
+      },
+      {
+        "id": "id_bu7r62t",
+        "front": "To feel overworked and overwhelmed",
+        "back": "Cảm thấy quá sức và quá tải",
+        "known": false
+      },
+      {
+        "id": "id_of0oq45",
+        "front": "Today’s cut-throat labor market",
+        "back": "Thị trường lao động cạnh tranh ngày nay",
+        "known": false
+      },
+      {
+        "id": "id_6rscb3n",
+        "front": "To face employment",
+        "back": "Đối mặt với tình trạng thất nghiệp",
+        "known": false
+      },
+      {
+        "id": "id_ic5x7f4",
+        "front": "Fast-track scheme",
+        "back": "Hệ thống/chương trình đào tạo nhanh cho nhân viên và được thăng chức sớm",
+        "known": false
+      },
+      {
+        "id": "id_jfyczj9",
+        "front": "Get the sack",
+        "back": "Bị đuổi việc",
+        "known": false
+      },
+      {
+        "id": "id_kyt6g8a",
+        "front": "To cold-call",
+        "back": "Gọi điện hoặc đến một khách hàng ngẫu nhiên để bán hàng mà không báo trước.",
+        "known": false
+      },
+      {
+        "id": "id_126b7yu",
+        "front": "To bring home the bacon",
+        "back": "Kiếm tiền cho gia đình",
+        "known": false
+      },
+      {
+        "id": "id_8m9g21i",
+        "front": "To be snowed under (with something)",
+        "back": "Bị vùi đầu trong công việc",
+        "known": false
+      },
+      {
+        "id": "id_rixgnxi",
+        "front": "To sweat blood",
+        "back": "Nỗ lực để hoàn thành công việc",
+        "known": false
+      },
+      {
+        "id": "id_2c2do1u",
+        "front": "To learn the ropes",
+        "back": "Học để cho thành thạo một công việc",
+        "known": false
+      },
+      {
+        "id": "id_gaypwp2",
+        "front": "Movers and shakers",
+        "back": "Người khôn ngoan và có thể làm mọi việc hiệu quả nhanh chóng",
+        "known": false
+      },
+      {
+        "id": "id_ylmeh7p",
+        "front": "Practice makes perfect",
+        "back": "Diễn tả việc tập luyện sẽ dẫn đến kết quả tốt hơn",
+        "known": false
+      },
+      {
+        "id": "id_q05088i",
+        "front": "To think outside the box",
+        "back": "Sáng tạo hơn, nghĩ vượt ra khỏi cách truyền thống",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Study & Work",
+    "cards": [
+      {
+        "id": "id_xzldb71",
+        "front": "research report",
+        "back": "Báo cáo khoa học\nExample: This research report under the background has been completed after three months' work.",
+        "known": false
+      },
+      {
+        "id": "id_89z8uro",
+        "front": "academic transcript",
+        "back": "Bảng điểm\nExample: It's an academic transcript.",
+        "known": false
+      },
+      {
+        "id": "id_3wlzp4i",
+        "front": "curriculum",
+        "back": "Chương trình\nExample: Math is my favorite subject in the curriculum.",
+        "known": false
+      },
+      {
+        "id": "id_btxfvtm",
+        "front": "cheat sheet",
+        "back": "Phao thi\nExample: John got caught using a cheat sheet during the test, he will be receiving a failing grade and will be in detention for the next three months.",
+        "known": false
+      },
+      {
+        "id": "id_i236exe",
+        "front": "distance education",
+        "back": "Đào tạo từ xa\nExample: He added that course materials are an important part of distance learning.",
+        "known": false
+      },
+      {
+        "id": "id_x5xnuwm",
+        "front": "plagiarize",
+        "back": "Đạo văn\nExample: Avoid plagiarizing or stealing someone else's work.",
+        "known": false
+      },
+      {
+        "id": "id_hh1cp8a",
+        "front": "class observation",
+        "back": "Dự giờ\nExample: I was observing the preschool and kindergarten classroom.",
+        "known": false
+      },
+      {
+        "id": "id_iz4qke5",
+        "front": "graduation ceremony",
+        "back": "Lễ tốt nghiệp\nExample: Her father was the commencement speaker at her graduation ceremony.",
+        "known": false
+      },
+      {
+        "id": "id_jnrm1v5",
+        "front": "boarding school",
+        "back": "Trường nội trú\nExample: A drama set in a boys' boarding school.",
+        "known": false
+      },
+      {
+        "id": "id_70tkej1",
+        "front": "private school",
+        "back": "Trường tư thục\nExample: Almost all of the rich, able students attend the elite private school.",
+        "known": false
+      },
+      {
+        "id": "id_yvxbo9e",
+        "front": "post-graduate courses",
+        "back": "Nghiên cứu sinh\nExample: She's doing a postgraduate course in women's studies.",
+        "known": false
+      },
+      {
+        "id": "id_2c1rmkf",
+        "front": "candidate-doctor of science",
+        "back": "Phó tiến sĩ\nExample: There are two successive postgraduate degrees: candidate of science (phd) and doctor of science.",
+        "known": false
+      },
+      {
+        "id": "id_9dxfoyb",
+        "front": "a gap year",
+        "back": "Khoảng thời gian 'tạm dừng' sau một quá trình học tập\nExample: We had the absolute fiasco of the gap year last summer.",
+        "known": false
+      },
+      {
+        "id": "id_ikukuda",
+        "front": "freelancer",
+        "back": "Người làm việc tự do\nExample: He's been freelance for several years.",
+        "known": false
+      },
+      {
+        "id": "id_19s3hbc",
+        "front": "financial analyst",
+        "back": "Nhà phân tích tài chính\nExample: She is a chartered accountant and a chartered financial analyst charterholder.",
+        "known": false
+      },
+      {
+        "id": "id_ur181ut",
+        "front": "nine-to-five job",
+        "back": "Việc làm giờ hành chính\nExample: He didn't understand people who had nine-to-five jobs.",
+        "known": false
+      },
+      {
+        "id": "id_79jpopt",
+        "front": "a desk job",
+        "back": "Công việc văn phòng\nExample: Disabled, he was offered a desk job for better pay.",
+        "known": false
+      },
+      {
+        "id": "id_5yaz7hu",
+        "front": "on probation",
+        "back": "Trong thời gian thử việc\nExample: As a new employee, I will be on probation for three months.",
+        "known": false
+      },
+      {
+        "id": "id_l2x61o0",
+        "front": "job satisfaction",
+        "back": "Sự hài lòng với công việc\nExample: I doubt I'll ever get rich, but I get job satisfaction.",
+        "known": false
+      },
+      {
+        "id": "id_qr294xq",
+        "front": "job prospect",
+        "back": "Triển vọng công việc\nExample: Some have seen their career prospects harmed.",
+        "known": false
+      },
+      {
+        "id": "id_11h50j5",
+        "front": "extracurricular activity",
+        "back": "Hoạt động ngoại khóa",
+        "known": false
+      },
+      {
+        "id": "id_kxwg18t",
+        "front": "put theory into practice",
+        "back": "Áp dụng lý thuyết vào thực hành",
+        "known": false
+      },
+      {
+        "id": "id_2njmrg1",
+        "front": "to fall behind with study",
+        "back": "Không theo kịp bài vở trên trường",
+        "known": false
+      },
+      {
+        "id": "id_2svv6m6",
+        "front": "to do/participate/take part in school activities/sport",
+        "back": "Tham gia các hoạt động tại trường/ thể thao",
+        "known": false
+      },
+      {
+        "id": "id_0hwzm18",
+        "front": "to give out or assign homework",
+        "back": "Giao bài tập về nhà",
+        "known": false
+      },
+      {
+        "id": "id_rxyoxiv",
+        "front": "have a good grasp of computer skills",
+        "back": "Nắm bắt tốt các kỹ năng máy tính",
+        "known": false
+      },
+      {
+        "id": "id_gezxtfq",
+        "front": "have a knack for something",
+        "back": "Có năng khiếu về khía cạnh nào đó",
+        "known": false
+      },
+      {
+        "id": "id_5vfa60c",
+        "front": "develop a passion for",
+        "back": "Phát triển niềm đam mê với cái gì",
+        "known": false
+      },
+      {
+        "id": "id_xzlaajv",
+        "front": "move up the career ladder",
+        "back": "Thăng tiến trong công việc",
+        "known": false
+      },
+      {
+        "id": "id_pm8tcvm",
+        "front": "to be among the top",
+        "back": "Nằm trong những người đứng đầu",
+        "known": false
+      },
+      {
+        "id": "id_oy2bpwg",
+        "front": "to be content with something",
+        "back": "Hài lòng với một điều gì đó",
+        "known": false
+      },
+      {
+        "id": "id_c2oq23u",
+        "front": "to work alongside somebody",
+        "back": "Làm việc cùng ai đó",
+        "known": false
+      },
+      {
+        "id": "id_ptv8vnl",
+        "front": "to be stuck behind a desk",
+        "back": "Không hạnh phúc đối với công việc văn phòng",
+        "known": false
+      },
+      {
+        "id": "id_vkivahf",
+        "front": "to take early retirement",
+        "back": "Nghỉ hưu sớm",
+        "known": false
+      },
+      {
+        "id": "id_mbkzz7d",
+        "front": "lay off staff",
+        "back": "Sa thải nhân viên",
+        "known": false
+      },
+      {
+        "id": "id_upnmhx3",
+        "front": "get the sack",
+        "back": "Bị đuổi việc",
+        "known": false
+      },
+      {
+        "id": "id_qiopopg",
+        "front": "pull an all-nighter",
+        "back": "Thức để cày trắng đêm trước hôm thi",
+        "known": false
+      },
+      {
+        "id": "id_slv346t",
+        "front": "to learn something by heart",
+        "back": "Học thuộc lòng",
+        "known": false
+      },
+      {
+        "id": "id_8270g3u",
+        "front": "to pass with flying colors",
+        "back": "Thi được điểm cao một cách dễ dàng",
+        "known": false
+      },
+      {
+        "id": "id_d8mhtwe",
+        "front": "cramming for a test",
+        "back": "Học nhồi nhét, cày cuốc cho bài kiểm tra",
+        "known": false
+      },
+      {
+        "id": "id_yj8izm9",
+        "front": "tell tales out of school",
+        "back": "Tiết lộ bí mật của người khác, nói xấu 1 bạn với thầy cô giáo",
+        "known": false
+      },
+      {
+        "id": "id_dyglm9t",
+        "front": "make ends meet",
+        "back": "Kiếm đủ tiền để trang trải cuộc sống",
+        "known": false
+      },
+      {
+        "id": "id_1qdjhx1",
+        "front": "bread and butter",
+        "back": "Nguồn thu nhập chính",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Crime & Punishment",
+    "cards": [
+      {
+        "id": "id_xq4fma3",
+        "front": "Arson",
+        "back": "Cố ý gây hỏa hoạn\nExample: She was found guilty of arson.",
+        "known": false
+      },
+      {
+        "id": "id_1lgc5wa",
+        "front": "Child abuse",
+        "back": "Tội lạm dụng trẻ em\nExample: The most common cause of head injury in children under age two is child abuse.",
+        "known": false
+      },
+      {
+        "id": "id_dbprcxr",
+        "front": "Burglary",
+        "back": "Tội ăn trộm\nExample: She was accused of burglary.",
+        "known": false
+      },
+      {
+        "id": "id_58jzwkr",
+        "front": "Murder",
+        "back": "Giết người\nExample: She admits unlawful wounding but denies attempted murder.",
+        "known": false
+      },
+      {
+        "id": "id_0softhz",
+        "front": "Pickpocketing",
+        "back": "Móc túi\nExample: Higher levels of street crime and pickpocketing.",
+        "known": false
+      },
+      {
+        "id": "id_h9agtu4",
+        "front": "Vandalism",
+        "back": "Phá hoại của công\nExample: They are looking at ways to prevent vandalism and theft.",
+        "known": false
+      },
+      {
+        "id": "id_qd0kygo",
+        "front": "Assault",
+        "back": "Hành hung\nExample: He appeared in court charged with assault.",
+        "known": false
+      },
+      {
+        "id": "id_zv7efve",
+        "front": "White-collar crimes",
+        "back": "Tội liên quan đến tiền bạc và tài chính\nExample: The banker was arrested for stealing from his company and was charged with several white-collar crimes.",
+        "known": false
+      },
+      {
+        "id": "id_dmtdo28",
+        "front": "Tax evasion",
+        "back": "Tội trốn thuế\nExample: A four-year sentence for tax evasion.",
+        "known": false
+      },
+      {
+        "id": "id_pw4uk4b",
+        "front": "Fraud",
+        "back": "Lừa đảo\nExample: He was jailed for two years for fraud and deception.",
+        "known": false
+      },
+      {
+        "id": "id_9y75b8y",
+        "front": "Smuggling",
+        "back": "Buôn lậu\nExample: They made a fortune in smuggling.",
+        "known": false
+      },
+      {
+        "id": "id_9abq1gz",
+        "front": "Terrorist",
+        "back": "Kẻ khủng bố\nExample: Then, only hours into her new job as Home Secretary, came those terrifying terrorist attacks.",
+        "known": false
+      },
+      {
+        "id": "id_cn03rhf",
+        "front": "Extortion/blackmail",
+        "back": "Tống tiền\nExample: He used bribery and extortion to build himself a huge, art-stuffed mansion.",
+        "known": false
+      },
+      {
+        "id": "id_9u9tiv7",
+        "front": "Juvenile crimes",
+        "back": "Tội phạm vị thành niên\nExample: The criminal was a juvenile offender.",
+        "known": false
+      },
+      {
+        "id": "id_337hkah",
+        "front": "Kidnapping",
+        "back": "Bắt cóc\nExample: It's been suggested the kidnapping was a put-up job.",
+        "known": false
+      },
+      {
+        "id": "id_5yqbko8",
+        "front": "Shoplifter",
+        "back": "Tên móc túi\nExample: The young shoplifter was only 13 years.",
+        "known": false
+      },
+      {
+        "id": "id_ws3ecf8",
+        "front": "Corruption",
+        "back": "Sự tham nhũng\nExample: The corruption of minors at the hands of criminals.",
+        "known": false
+      },
+      {
+        "id": "id_xokq3ai",
+        "front": "Sexual harassment",
+        "back": "Quấy rối tình dục\nExample: She had been subjected to continual sexual harassment.",
+        "known": false
+      },
+      {
+        "id": "id_v3vrqhf",
+        "front": "Incarceration",
+        "back": "Sự giam giữ\nExample: The public would not be served by her incarceration.",
+        "known": false
+      },
+      {
+        "id": "id_3txwv6n",
+        "front": "Fine",
+        "back": "Đóng phạt, tiền phạt\nExample: All of these crimes involve punishments that can range from unlimited fines and up to ten years imprisonment.",
+        "known": false
+      },
+      {
+        "id": "id_iblelni",
+        "front": "Social isolation",
+        "back": "Cô lập về mặt xã hội\nExample: Symptoms include changes in behavior, social isolation, headaches or tummy upsets.",
+        "known": false
+      },
+      {
+        "id": "id_ug818cs",
+        "front": "Community service",
+        "back": "Lao động công ích\nExample: Family members and friends can pull away, leading to further social isolation and loneliness.",
+        "known": false
+      },
+      {
+        "id": "id_hprc9f8",
+        "front": "Life imprisonment",
+        "back": "Tù chung thân\nExample: He was certified insane and then sentenced to life imprisonment, after which he was birched.",
+        "known": false
+      },
+      {
+        "id": "id_m8ikkzr",
+        "front": "Rehabilitation programmes",
+        "back": "Những chương trình cải tạo\nExample: Duff considers the meaning of rehabilitation and punishment and whether they are opposed responses to crime.",
+        "known": false
+      },
+      {
+        "id": "id_bmas6fw",
+        "front": "Capital punishment",
+        "back": "Tử hình\nExample: Capital punishment refers to the process of sentencing convicted offenders to death for the most serious crimes.",
+        "known": false
+      },
+      {
+        "id": "id_amz6bb1",
+        "front": "A suspended sentence",
+        "back": "Hoãn thi hành án\nExample: The sergeant and the private were sentenced to life imprisonment, but the captain received a two-year suspended sentence.",
+        "known": false
+      },
+      {
+        "id": "id_8wqw2p3",
+        "front": "Forfeiture",
+        "back": "Tịch thu tài sản\nExample: In this case, the penalty should be forfeiture of the pistol and ring.",
+        "known": false
+      },
+      {
+        "id": "id_x8ttyh4",
+        "front": "House arrest",
+        "back": "Giam giữ tại nhà\nExample: He was under house arrest for some small misdemeanor.",
+        "known": false
+      },
+      {
+        "id": "id_s4pbx2x",
+        "front": "Non-custodial sentence",
+        "back": "Án treo\nExample: When someone is convicted in court, the judge can give them a non-custodial sentence.",
+        "known": false
+      },
+      {
+        "id": "id_k7klnav",
+        "front": "Alibi",
+        "back": "Bằng chứng ngoại phạm\nExample: Her friend agreed to alibi her.",
+        "known": false
+      },
+      {
+        "id": "id_447tq34",
+        "front": "Judge",
+        "back": "Thẩm phán\nExample: It was hard to judge the extent of the damage.",
+        "known": false
+      },
+      {
+        "id": "id_vzgr0nk",
+        "front": "Jury",
+        "back": "Bồi thẩm đoàn\nExample: They have a right to trial by jury.",
+        "known": false
+      },
+      {
+        "id": "id_090eddr",
+        "front": "Court reporter",
+        "back": "Thư ký tòa án\nExample: He began as a court reporter before becoming an investigative reporter covering terrorism.",
+        "known": false
+      },
+      {
+        "id": "id_ul804tw",
+        "front": "Prosecutor",
+        "back": "Công tố viên\nExample: He was prosecutor in the case of the Crown versus Jones.",
+        "known": false
+      },
+      {
+        "id": "id_n7xae52",
+        "front": "Defense",
+        "back": "Luật sư biện hộ\nExample: His first title defense against Jones.",
+        "known": false
+      },
+      {
+        "id": "id_uq5107y",
+        "front": "Conviction",
+        "back": "Bản tuyên án\nExample: I have a firm conviction that right will prevail in the end.",
+        "known": false
+      },
+      {
+        "id": "id_orh5ux7",
+        "front": "Circumstantial evidence",
+        "back": "Chứng cứ gián tiếp\nExample: There is a lot of circumstantial evidence against the man, but no proof.",
+        "known": false
+      },
+      {
+        "id": "id_nhi6uxz",
+        "front": "Extenuating circumstances",
+        "back": "Tình tiết giảm nhẹ tội\nExample: I hope that such extenuating circumstances will lead to sensitive and sensible enforcement.",
+        "known": false
+      },
+      {
+        "id": "id_x1nsyk4",
+        "front": "Serve a prison sentence",
+        "back": "Án tù",
+        "known": false
+      },
+      {
+        "id": "id_26mu6zi",
+        "front": "To revoke a license",
+        "back": "Tịch thu bằng",
+        "known": false
+      },
+      {
+        "id": "id_r0tf0un",
+        "front": "Take part in unlawful activities",
+        "back": "Tham gia vào các hoạt động phạm pháp",
+        "known": false
+      },
+      {
+        "id": "id_ger3gs2",
+        "front": "To reoffend",
+        "back": "Tái phạm",
+        "known": false
+      },
+      {
+        "id": "id_nqi79zb",
+        "front": "To turn somebody in",
+        "back": "Giao nộp ai đó cho cảnh sát",
+        "known": false
+      },
+      {
+        "id": "id_8j01xfa",
+        "front": "To bail someone out",
+        "back": "Bảo lãnh",
+        "known": false
+      },
+      {
+        "id": "id_0dkgju2",
+        "front": "To fight crime",
+        "back": "Đấu tranh chống tội phạm",
+        "known": false
+      },
+      {
+        "id": "id_kgxuxdi",
+        "front": "Mimic violent behavior",
+        "back": "Bắt chước các hành vi bạo lực",
+        "known": false
+      },
+      {
+        "id": "id_0fb2mov",
+        "front": "To create a violent culture",
+        "back": "Tạo ra 1 nền văn hóa bạo lực",
+        "known": false
+      },
+      {
+        "id": "id_tvr342q",
+        "front": "To breed future offender",
+        "back": "Ảnh hưởng đến người khác, khiến cho họ có thể trở thành tội phạm trong tương lai",
+        "known": false
+      },
+      {
+        "id": "id_hmn07av",
+        "front": "Administer public propagation programs",
+        "back": "Thực hiện những chương trình tuyên truyền cộng đồng",
+        "known": false
+      },
+      {
+        "id": "id_gfnp7tj",
+        "front": "Heighten social awareness and intellect",
+        "back": "Tôn lên nhận thức và hiểu biết xã hội",
+        "known": false
+      },
+      {
+        "id": "id_s6n631y",
+        "front": "Prevent juvenile delinquency",
+        "back": "Ngăn chặn sự phạm tội vị thành niên",
+        "known": false
+      },
+      {
+        "id": "id_1dsxjhb",
+        "front": "Be brought to justice",
+        "back": "Bị đưa ra xét xử",
+        "known": false
+      },
+      {
+        "id": "id_523ud85",
+        "front": "Be wrongly convicted and executed",
+        "back": "Bị kết tội và xử oan",
+        "known": false
+      },
+      {
+        "id": "id_przadlw",
+        "front": "Crime prevention programmes",
+        "back": "Những chương trình phòng chống tội phạm",
+        "known": false
+      },
+      {
+        "id": "id_9u2sxg7",
+        "front": "Security cameras and home surveillance equipment",
+        "back": "Thiết bị giám sát tại nhà và camera an ninh",
+        "known": false
+      },
+      {
+        "id": "id_m3exyul",
+        "front": "Pose a serious threat to society",
+        "back": "Gây ra mối đe dọa nghiêm trọng cho xã hội",
+        "known": false
+      },
+      {
+        "id": "id_ffxfcw3",
+        "front": "Turn to illegal acts to generate income",
+        "back": "Phạm tội để kiếm tiền",
+        "known": false
+      },
+      {
+        "id": "id_okbaaso",
+        "front": "Behind bars",
+        "back": "Trong tù",
+        "known": false
+      },
+      {
+        "id": "id_167euok",
+        "front": "To cover your tracks",
+        "back": "Che giấu những vết tích hay các việc mình đã làm",
+        "known": false
+      },
+      {
+        "id": "id_ahp2h2i",
+        "front": "To come clean",
+        "back": "Lời thú tội",
+        "known": false
+      },
+      {
+        "id": "id_crxeb3f",
+        "front": "To catch somebody red handed",
+        "back": "Bắt quả tang",
+        "known": false
+      },
+      {
+        "id": "id_3m3jryf",
+        "front": "To keep your nose clean",
+        "back": "Giữ cho mình khỏi gặp rắc rối",
+        "known": false
+      },
+      {
+        "id": "id_x4m108n",
+        "front": "To get away with murder",
+        "back": "Làm điều sai nhưng không bị trừng phạt",
+        "known": false
+      },
+      {
+        "id": "id_dgjfln6",
+        "front": "To turn a blind eye",
+        "back": "Nhắm mắt làm ngơ",
+        "known": false
+      },
+      {
+        "id": "id_4jk0sgo",
+        "front": "To brush something under the carpet",
+        "back": "Phủ nhận, cố gắng che giấu sự thật",
+        "known": false
+      },
+      {
+        "id": "id_brb3soj",
+        "front": "Grease someone’s palm",
+        "back": "Đút lót, hối lộ ai đó",
+        "known": false
+      },
+      {
+        "id": "id_rujseb2",
+        "front": "To carry the can",
+        "back": "Nhận tội thay",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Food & Drinks",
+    "cards": [
+      {
+        "id": "id_6vqrnvc",
+        "front": "Broccoli",
+        "back": "Bông cải xanh\nExample: I served steamed broccoli with the fish.",
+        "known": false
+      },
+      {
+        "id": "id_s03yf6k",
+        "front": "Cucumber",
+        "back": "Dưa leo\nExample: We had a cold cucumber soup as a starter.",
+        "known": false
+      },
+      {
+        "id": "id_m5q8jnk",
+        "front": "Green pepper",
+        "back": "Tiêu xanh\nExample: Likewise for a very nice green pepper plant.",
+        "known": false
+      },
+      {
+        "id": "id_njeovmv",
+        "front": "Celery",
+        "back": "Cần tây\nExample: A stick of celery is a healthy snack.",
+        "known": false
+      },
+      {
+        "id": "id_ie3m5ks",
+        "front": "Sweet potato",
+        "back": "Khoai lang\nExample: After middle May the sweet potato plants are in line for setting out.",
+        "known": false
+      },
+      {
+        "id": "id_7g4gqkj",
+        "front": "Spinach",
+        "back": "Rau chân vịt\nExample: Spinach is packed with vitamins and minerals.",
+        "known": false
+      },
+      {
+        "id": "id_ozq3k4z",
+        "front": "Tomato",
+        "back": "Cà chua\nExample: I'd like bacon, grilled tomato, and a fried egg, please.",
+        "known": false
+      },
+      {
+        "id": "id_by1j63e",
+        "front": "Radish",
+        "back": "Củ cải\nExample: She carved a flower out of a radish.",
+        "known": false
+      },
+      {
+        "id": "id_sri6uyp",
+        "front": "Hamburger",
+        "back": "Bánh mì ham-bơ-gơ\nExample: My favorite food is hamburger and fries.",
+        "known": false
+      },
+      {
+        "id": "id_wql19am",
+        "front": "Chicken nugget",
+        "back": "Gà không xương\nExample: You know what's in our chicken nuggets?",
+        "known": false
+      },
+      {
+        "id": "id_kc1lzph",
+        "front": "Onion ring",
+        "back": "Hành tây chiên\nExample: The onion rings were battered and cooked in fresh oil.",
+        "known": false
+      },
+      {
+        "id": "id_actu7os",
+        "front": "French fries",
+        "back": "Khoai tây chiên\nExample: Carol brought us steak, French fries and salad of the kind.",
+        "known": false
+      },
+      {
+        "id": "id_0c8lnt4",
+        "front": "Toast",
+        "back": "Bánh mì nướng\nExample: Would you like a piece of toast?",
+        "known": false
+      },
+      {
+        "id": "id_nhw4nei",
+        "front": "Sandwich",
+        "back": "Bánh mì kẹp\nExample: Sandwich the two halves of the sponge together with cream.",
+        "known": false
+      },
+      {
+        "id": "id_5slv8j6",
+        "front": "Sausage",
+        "back": "Xúc xích\nExample: She sliced off a piece of sausage.",
+        "known": false
+      },
+      {
+        "id": "id_9ifgp6m",
+        "front": "Noodles",
+        "back": "Bún, phở, mì (thức ăn dạng sợi)\nExample: I had a bowl of soup with egg noodles.",
+        "known": false
+      },
+      {
+        "id": "id_bhde30l",
+        "front": "Dumplings",
+        "back": "Bánh bao, há cảo\nExample: We had chicken stew with dumplings.",
+        "known": false
+      },
+      {
+        "id": "id_buqh85c",
+        "front": "Sticky rice",
+        "back": "Xôi\nExample: Late that night, the villagers begin to steam sticky rice and make sweets.",
+        "known": false
+      },
+      {
+        "id": "id_7env86m",
+        "front": "Spaghetti",
+        "back": "Mỳ Ý\nExample: There isn't enough spaghetti left for dinner.",
+        "known": false
+      },
+      {
+        "id": "id_c2az2s5",
+        "front": "Chicken drumstick",
+        "back": "Đùi gà\nExample: I teamed it with chicken drumsticks roasted over rosemary.",
+        "known": false
+      },
+      {
+        "id": "id_owm96az",
+        "front": "Spare ribs",
+        "back": "Sườn non\nExample: The meat on the spare ribs is tender and falls off the bone.",
+        "known": false
+      },
+      {
+        "id": "id_s3kho04",
+        "front": "Beefsteak",
+        "back": "Bít tết thịt bò\nExample: Red Dawn Large fruited; first UK-bred beefsteak variety for outdoors.",
+        "known": false
+      },
+      {
+        "id": "id_isy33p0",
+        "front": "Mixed grill",
+        "back": "Món nướng thập cẩm\nExample: The human love of the mixed grill, after all, runs deep.",
+        "known": false
+      },
+      {
+        "id": "id_ett0b9b",
+        "front": "Brownies",
+        "back": "Bánh sô-cô-la\nExample: The brownies are rich and full of chocolate flavor.",
+        "known": false
+      },
+      {
+        "id": "id_wo1nnvs",
+        "front": "Yogurt",
+        "back": "Sữa chua\nExample: I ate a carton of yogurt.",
+        "known": false
+      },
+      {
+        "id": "id_uqui6jl",
+        "front": "Cheesecake",
+        "back": "Bánh phô mai\nExample: I had strawberry cheesecake for dessert.",
+        "known": false
+      },
+      {
+        "id": "id_zhcrwnz",
+        "front": "Coconut jelly",
+        "back": "Thạch dừa\nExample: Coconut jelly is one of the favorite snacks of many people.",
+        "known": false
+      },
+      {
+        "id": "id_wpezf9g",
+        "front": "Doughnut",
+        "back": "Bánh rán\nExample: Have a jam doughnut.",
+        "known": false
+      },
+      {
+        "id": "id_vgyxuqm",
+        "front": "Sorbet",
+        "back": "Kem trái cây\nExample: A big wedge is served with lemon sauce and passion fruit sorbet.",
+        "known": false
+      },
+      {
+        "id": "id_tz212bb",
+        "front": "Cookie",
+        "back": "Bánh quy\nExample: Cut the cookie dough into diamonds.",
+        "known": false
+      },
+      {
+        "id": "id_i4k8rym",
+        "front": "Ice cream",
+        "back": "Kem\nExample: Ice cream is popular among children.",
+        "known": false
+      },
+      {
+        "id": "id_22oku4q",
+        "front": "Croissant",
+        "back": "Bánh sừng trâu\nExample: Fresh-baked croissants are served with breakfast.",
+        "known": false
+      },
+      {
+        "id": "id_4c6e030",
+        "front": "Beer",
+        "back": "Bia\nExample: He was drinking a glass of beer.",
+        "known": false
+      },
+      {
+        "id": "id_t3mzjc4",
+        "front": "Coffee",
+        "back": "Cà phê\nExample: She'll buy you a coffee.",
+        "known": false
+      },
+      {
+        "id": "id_6apvlk6",
+        "front": "Orange juice",
+        "back": "Nước ép cam\nExample: I had a cup of soup and a glass of orange juice.",
+        "known": false
+      },
+      {
+        "id": "id_iibrgqn",
+        "front": "Smoothie",
+        "back": "Sinh tố\nExample: I love making smoothies and soups.",
+        "known": false
+      },
+      {
+        "id": "id_cobh7ex",
+        "front": "Wine",
+        "back": "Rượu vang\nExample: He opened a bottle of red wine.",
+        "known": false
+      },
+      {
+        "id": "id_64ilivw",
+        "front": "Soft drink",
+        "back": "Nước ngọt\nExample: I prefer soft drink.",
+        "known": false
+      },
+      {
+        "id": "id_0wch6bh",
+        "front": "Champagne",
+        "back": "Rượu sâm banh\nExample: And they served the pink champagne, and Dali talked all the time.",
+        "known": false
+      },
+      {
+        "id": "id_eluo3zf",
+        "front": "Bubble milk tea",
+        "back": "Trà sữa trân châu\nExample: Each week she bypasses the drink machines in her dorm for bubble teas.",
+        "known": false
+      },
+      {
+        "id": "id_pnr8uls",
+        "front": "Herbal tea",
+        "back": "Trà thảo mộc\nExample: She gave me an herbal tea that helped energize me and coordinate my efforts.",
+        "known": false
+      },
+      {
+        "id": "id_nnu2g39",
+        "front": "Mineral water",
+        "back": "Nước khoáng\nExample: A bottle of mineral water, please.",
+        "known": false
+      },
+      {
+        "id": "id_t7xowxr",
+        "front": "Broken rice",
+        "back": "Cơm tấm",
+        "known": false
+      },
+      {
+        "id": "id_359zosz",
+        "front": "Crab rice noodles",
+        "back": "Bún cua, bánh canh cua",
+        "known": false
+      },
+      {
+        "id": "id_h6yuagz",
+        "front": "Clam rice",
+        "back": "Cơm hến",
+        "known": false
+      },
+      {
+        "id": "id_hl12qbl",
+        "front": "Hue style beef noodles",
+        "back": "Bún bò Huế",
+        "known": false
+      },
+      {
+        "id": "id_eivtsf8",
+        "front": "Steamed pork loaf",
+        "back": "Chả lụa",
+        "known": false
+      },
+      {
+        "id": "id_wdg7rox",
+        "front": "Stuffed pancake",
+        "back": "Bánh cuốn",
+        "known": false
+      },
+      {
+        "id": "id_igqkv9p",
+        "front": "Mixed rice paper salad",
+        "back": "Bánh tráng trộn",
+        "known": false
+      },
+      {
+        "id": "id_thhqjzo",
+        "front": "Pia cake",
+        "back": "Bánh pía",
+        "known": false
+      },
+      {
+        "id": "id_t2dnn7b",
+        "front": "Toasted coconut cake",
+        "back": "Bánh dừa nướng",
+        "known": false
+      },
+      {
+        "id": "id_ngbyq9r",
+        "front": "Curry with baguette",
+        "back": "Bánh mì thịt",
+        "known": false
+      },
+      {
+        "id": "id_kgygfcl",
+        "front": "Vietnamese noodle soup",
+        "back": "Phở",
+        "known": false
+      },
+      {
+        "id": "id_y82x4cx",
+        "front": "Fried rice cake",
+        "back": "Bột chiên",
+        "known": false
+      },
+      {
+        "id": "id_a1qp740",
+        "front": "Mini shrimp pancakes",
+        "back": "Bánh khọt",
+        "known": false
+      },
+      {
+        "id": "id_0iqxjqb",
+        "front": "Beef stew with baguette",
+        "back": "Bánh mì bò kho",
+        "known": false
+      },
+      {
+        "id": "id_b6r0x5l",
+        "front": "Tet sticky rice cakes",
+        "back": "Bánh chưng",
+        "known": false
+      },
+      {
+        "id": "id_rqtdi6k",
+        "front": "GM food",
+        "back": "Thực phẩm biến đổi gen",
+        "known": false
+      },
+      {
+        "id": "id_t06cyf8",
+        "front": "Pre-packaged meal",
+        "back": "Bữa ăn đóng gói sẵn",
+        "known": false
+      },
+      {
+        "id": "id_qa8taib",
+        "front": "Fast food chain",
+        "back": "Chuỗi cửa hàng đồ ăn nhanh",
+        "known": false
+      },
+      {
+        "id": "id_o46mf9j",
+        "front": "Culinary skills",
+        "back": "Kỹ năng nấu ăn",
+        "known": false
+      },
+      {
+        "id": "id_s6tr65k",
+        "front": "Food poisoning",
+        "back": "Ngộ độc thức ăn",
+        "known": false
+      },
+      {
+        "id": "id_9724jmr",
+        "front": "Local delicacies",
+        "back": "Các món ngon riêng biệt của một đất nước hay vùng miền",
+        "known": false
+      },
+      {
+        "id": "id_lueoq8y",
+        "front": "Ready-made food",
+        "back": "Thức ăn làm sẵn",
+        "known": false
+      },
+      {
+        "id": "id_rnc5qjq",
+        "front": "Nutritious food",
+        "back": "Thực phẩm tốt cho sức khỏe",
+        "known": false
+      },
+      {
+        "id": "id_914mvhv",
+        "front": "Canned food",
+        "back": "Thực phẩm đóng hộp",
+        "known": false
+      },
+      {
+        "id": "id_ojwv9us",
+        "front": "Organic food",
+        "back": "Thực phẩm hữu cơ",
+        "known": false
+      },
+      {
+        "id": "id_lxjcdpi",
+        "front": "Food culture",
+        "back": "Văn hóa ẩm thực",
+        "known": false
+      },
+      {
+        "id": "id_ylqihbj",
+        "front": "Food deprivation",
+        "back": "Khan hiếm thực phẩm",
+        "known": false
+      },
+      {
+        "id": "id_mxx516u",
+        "front": "Food consumption",
+        "back": "Sự tiêu thụ thực phẩm",
+        "known": false
+      },
+      {
+        "id": "id_tm8x2jh",
+        "front": "Food allergy",
+        "back": "Dị ứng thức ăn",
+        "known": false
+      },
+      {
+        "id": "id_bn4298v",
+        "front": "Food intake",
+        "back": "Lượng thức ăn đưa vào cơ thể",
+        "known": false
+      },
+      {
+        "id": "id_kn4jgo6",
+        "front": "Sanitize all cooking equipment",
+        "back": "Sát khuẩn dụng cụ nấu ăn",
+        "known": false
+      },
+      {
+        "id": "id_rbcz7h7",
+        "front": "A mouthful of something",
+        "back": "Một miếng, một ngụm",
+        "known": false
+      },
+      {
+        "id": "id_7d52uce",
+        "front": "Cut down on food",
+        "back": "Giảm bớt khẩu phần ăn",
+        "known": false
+      },
+      {
+        "id": "id_fq36scz",
+        "front": "To grab a bite to eat",
+        "back": "Ăn vội",
+        "known": false
+      },
+      {
+        "id": "id_7isy4mu",
+        "front": "To bolt something down",
+        "back": "Ăn rất nhanh",
+        "known": false
+      },
+      {
+        "id": "id_abqwepy",
+        "front": "To cook a meal using instruction",
+        "back": "Nấu theo công thức",
+        "known": false
+      },
+      {
+        "id": "id_nff0tfs",
+        "front": "To have a sweet tooth",
+        "back": "Thích ăn ngọt",
+        "known": false
+      },
+      {
+        "id": "id_atjpxus",
+        "front": "To be dying of hunger",
+        "back": "Sắp chết đói (rất đói bụng)",
+        "known": false
+      },
+      {
+        "id": "id_agn9a1x",
+        "front": "To spoil your appetite",
+        "back": "Làm biếng ăn",
+        "known": false
+      },
+      {
+        "id": "id_k7k6lpq",
+        "front": "To avoid eating when you really want to",
+        "back": "Cố nhịn đói",
+        "known": false
+      },
+      {
+        "id": "id_pedz2q3",
+        "front": "To foot the bill",
+        "back": "Thanh toán",
+        "known": false
+      },
+      {
+        "id": "id_68iesjr",
+        "front": "To wine and dine",
+        "back": "Thiết đãi ai đó với đồ ăn và rượu",
+        "known": false
+      },
+      {
+        "id": "id_gjw3f0i",
+        "front": "A piece of cake",
+        "back": "Dễ như ăn kẹo",
+        "known": false
+      },
+      {
+        "id": "id_34pqf59",
+        "front": "Sell like hot cake",
+        "back": "Được nhiều người mua",
+        "known": false
+      },
+      {
+        "id": "id_8n2fyxw",
+        "front": "Cup of tea",
+        "back": "Sở trường",
+        "known": false
+      },
+      {
+        "id": "id_9trkzvo",
+        "front": "Spice things up",
+        "back": "Việc thêm gia vị vào các món ăn cho hấp dẫn",
+        "known": false
+      },
+      {
+        "id": "id_pb90rdu",
+        "front": "Eat like a bird",
+        "back": "Ăn rất ít",
+        "known": false
+      },
+      {
+        "id": "id_0kq3aat",
+        "front": "Eat like a horse",
+        "back": "Ăn rất nhiều",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Fruit & Taste",
+    "cards": [
+      {
+        "id": "id_j0oza2c",
+        "front": "Almond",
+        "back": "/ˈɑː.mənd/\nQuả hạnh nhân",
+        "known": false
+      },
+      {
+        "id": "id_v4qfa5y",
+        "front": "Ambarella",
+        "back": "/'æmbə'rælə/\nQuả cóc",
+        "known": false
+      },
+      {
+        "id": "id_0aje9uv",
+        "front": "Apple",
+        "back": "/ˈæp.əl/\nQuả táo",
+        "known": false
+      },
+      {
+        "id": "id_zuktp92",
+        "front": "Apricot",
+        "back": "/ˈeɪ.prɪ.kɒt/\nQuả mơ",
+        "known": false
+      },
+      {
+        "id": "id_fsjxdph",
+        "front": "Avocado",
+        "back": "/ˌæv.əˈkɑː.dəʊ/\nQuả bơ",
+        "known": false
+      },
+      {
+        "id": "id_msmlyxh",
+        "front": "Banana",
+        "back": "/bəˈnɑː.nə/\nQuả chuối",
+        "known": false
+      },
+      {
+        "id": "id_fmke2f1",
+        "front": "Blackberry",
+        "back": "/ˈblæk.bər.i/\nQuả mâm xôi đen",
+        "known": false
+      },
+      {
+        "id": "id_30p6uws",
+        "front": "Blueberry",
+        "back": "/ˈbluːˌbər.i/\nQuả việt quất",
+        "known": false
+      },
+      {
+        "id": "id_yc5n1b9",
+        "front": "Breadfruit",
+        "back": "/ˈbrɛdfruːt/\nSa kê",
+        "known": false
+      },
+      {
+        "id": "id_e7bhwvt",
+        "front": "Blood orange",
+        "back": "/blʌd ˈɒrɪnʤ/\nCam đỏ",
+        "known": false
+      },
+      {
+        "id": "id_u6zexii",
+        "front": "Cantaloup",
+        "back": "/ˈkæn.tə.luːp/\nQuả dưa lưới",
+        "known": false
+      },
+      {
+        "id": "id_zpubtae",
+        "front": "Cherry",
+        "back": "/ˈtʃer.i/\nQuả anh đào",
+        "known": false
+      },
+      {
+        "id": "id_6ikqw2j",
+        "front": "Citron",
+        "back": "/ˈsɪt.rən/\nQuả thanh yên",
+        "known": false
+      },
+      {
+        "id": "id_epwf47c",
+        "front": "Coconut",
+        "back": "/ˈkəʊ.kə.nʌt/\nQuả dừa",
+        "known": false
+      },
+      {
+        "id": "id_v1u2ai5",
+        "front": "Cucumber",
+        "back": "/ˈkjuː.kʌm.bər/\nQuả dưa leo, dưa chuột",
+        "known": false
+      },
+      {
+        "id": "id_tvycff2",
+        "front": "Currant",
+        "back": "/ˈkʌr.ənt/\nQuả nho Hy Lạp",
+        "known": false
+      },
+      {
+        "id": "id_khsv2d7",
+        "front": "Custard apple",
+        "back": "/ˈkʌs.təd ˌæp.əl/\nQuả mãng cầu",
+        "known": false
+      },
+      {
+        "id": "id_l39qrsa",
+        "front": "Chestnut",
+        "back": "/ˈʧɛsnʌt/\nHạt dẻ",
+        "known": false
+      },
+      {
+        "id": "id_22nbq1r",
+        "front": "Cranberry",
+        "back": "/ˈkrænbəri/\nNam việt quất",
+        "known": false
+      },
+      {
+        "id": "id_9vm1kxu",
+        "front": "Clementine",
+        "back": "/ˈklɛməntaɪn/\nQuýt",
+        "known": false
+      },
+      {
+        "id": "id_jmafr8b",
+        "front": "Carambola",
+        "back": "/kaˈram.bo.la/\nKhế",
+        "known": false
+      },
+      {
+        "id": "id_ipgc2a0",
+        "front": "Date",
+        "back": "/deɪt/\nQuả chà là",
+        "known": false
+      },
+      {
+        "id": "id_w6po3ui",
+        "front": "Dragon fruit",
+        "back": "/ˈdræɡ.ən ˌfruːt/\nQuả thanh long",
+        "known": false
+      },
+      {
+        "id": "id_cgnv9nt",
+        "front": "Durian",
+        "back": "/ˈdʒʊə.ri.ən/\nQuả sầu riêng",
+        "known": false
+      },
+      {
+        "id": "id_ki0n0mb",
+        "front": "Fig",
+        "back": "/fɪg/\nSung",
+        "known": false
+      },
+      {
+        "id": "id_fomjgkm",
+        "front": "Gooseberries",
+        "back": "/ˈgʊzbəriz/\nLý gai",
+        "known": false
+      },
+      {
+        "id": "id_zm1n7e1",
+        "front": "Grape",
+        "back": "/greɪp/\nNho",
+        "known": false
+      },
+      {
+        "id": "id_qafdg86",
+        "front": "Grapefruit",
+        "back": "/ˈɡreɪp.fruːt/\nQuả bưởi",
+        "known": false
+      },
+      {
+        "id": "id_7c50e1t",
+        "front": "Guava",
+        "back": "/ˈɡwɑː.və/\nQuả ổi",
+        "known": false
+      },
+      {
+        "id": "id_5jm6478",
+        "front": "Green almonds",
+        "back": "/griːn ˈɑːməndz/\nHạnh xanh",
+        "known": false
+      },
+      {
+        "id": "id_2yzadpt",
+        "front": "Honeydew",
+        "back": "/ˈhʌnɪdjuː/\nDưa xanh",
+        "known": false
+      },
+      {
+        "id": "id_n7uhark",
+        "front": "Indian cream cobra melon",
+        "back": "/ˈɪndiən kriːm ˈkəʊbrə ˈmɛlən/\nDưa gang",
+        "known": false
+      },
+      {
+        "id": "id_e4wu99x",
+        "front": "Jackfruit",
+        "back": "/ˈdʒæk.fruːt/\nQuả mít",
+        "known": false
+      },
+      {
+        "id": "id_w53vltk",
+        "front": "Jujube",
+        "back": "/ˈdʒuː.dʒuːb/\nQuả táo ta",
+        "known": false
+      },
+      {
+        "id": "id_78q2nca",
+        "front": "Juniper berry",
+        "back": "/ˈʤuːnɪpə ˈbɛri/\nBách xù",
+        "known": false
+      },
+      {
+        "id": "id_krw62jw",
+        "front": "Java-Plum",
+        "back": "/ˈʤɑːvə-plʌm/\nTrâm mốc",
+        "known": false
+      },
+      {
+        "id": "id_fciidw4",
+        "front": "Kumquat",
+        "back": "/ˈkʌm.kwɒt/\nQuất",
+        "known": false
+      },
+      {
+        "id": "id_te1870d",
+        "front": "Kiwi fruit",
+        "back": "/ˈkiːwi(ː) fruːt/\nQuả Kiwi",
+        "known": false
+      },
+      {
+        "id": "id_mhe6c9g",
+        "front": "Lemon",
+        "back": "/ˈlem.ən/\nQuả chanh vàng",
+        "known": false
+      },
+      {
+        "id": "id_n33lfc4",
+        "front": "Lime",
+        "back": "/laɪm/\nQuả chanh xanh",
+        "known": false
+      },
+      {
+        "id": "id_t1aebj4",
+        "front": "Longan",
+        "back": "/ˈlɒŋ.ɡən/\nQuả nhãn",
+        "known": false
+      },
+      {
+        "id": "id_6vobi6t",
+        "front": "Litchi",
+        "back": "/ˈliː.tʃiː/\nQuả vải",
+        "known": false
+      },
+      {
+        "id": "id_6olcufi",
+        "front": "Loquat",
+        "back": "/ˈləʊ.kwɒt/\nNhót tây",
+        "known": false
+      },
+      {
+        "id": "id_tbdx90r",
+        "front": "Mangosteen",
+        "back": "/ˈmæŋ.ɡə.stiːn/\nMăng cụt",
+        "known": false
+      },
+      {
+        "id": "id_ovbgrvh",
+        "front": "Mango",
+        "back": "/ˈmæŋgəʊ/\nXoài",
+        "known": false
+      },
+      {
+        "id": "id_d6otijg",
+        "front": "Mandarin",
+        "back": "/’mændərin/\nQuả quýt",
+        "known": false
+      },
+      {
+        "id": "id_qj8orma",
+        "front": "Melon",
+        "back": "/ˈmɛlən/\nDưa lưới",
+        "known": false
+      },
+      {
+        "id": "id_h3nc12p",
+        "front": "Malay apple",
+        "back": "/məˈleɪ ˈæpl/\nĐiều",
+        "known": false
+      },
+      {
+        "id": "id_cjiaaxt",
+        "front": "Nectarine",
+        "back": "/ˈnɛktərɪn/\nXuân đào",
+        "known": false
+      },
+      {
+        "id": "id_kertz6s",
+        "front": "Orange",
+        "back": "/ˈɒr.ɪndʒ/\nQuả cam",
+        "known": false
+      },
+      {
+        "id": "id_nqxmcuj",
+        "front": "Olive",
+        "back": "/ˈɒlɪv/\nÔ liu",
+        "known": false
+      },
+      {
+        "id": "id_1oc3mty",
+        "front": "Papaya",
+        "back": "/pəˈpaɪ.ə/\nQuả đu đủ",
+        "known": false
+      },
+      {
+        "id": "id_ldefanv",
+        "front": "Passion fruit",
+        "back": "/ˈpæʃ.ən ˌfruːt/\nQuả chanh dây",
+        "known": false
+      },
+      {
+        "id": "id_3nxajjq",
+        "front": "Peach",
+        "back": "/piːtʃ/\nQuả đào",
+        "known": false
+      },
+      {
+        "id": "id_tdajqxf",
+        "front": "Pear",
+        "back": "/peər/\nQuả lê",
+        "known": false
+      },
+      {
+        "id": "id_znynuj6",
+        "front": "Persimmon",
+        "back": "/pəˈsɪm.ən/\nQuả hồng",
+        "known": false
+      },
+      {
+        "id": "id_69a7wl6",
+        "front": "Pineapple",
+        "back": "/ˈpaɪnˌæp.əl/\nQuả dứa/thơm/khóm",
+        "known": false
+      },
+      {
+        "id": "id_tttnfxd",
+        "front": "Plum",
+        "back": "/plʌm/\nQuả mận",
+        "known": false
+      },
+      {
+        "id": "id_xxh6h4f",
+        "front": "Pomegranate",
+        "back": "/ˈpɒm.ɪˌɡræn.ɪt/\nQuả lựu",
+        "known": false
+      },
+      {
+        "id": "id_kvtfw4j",
+        "front": "Pitaya",
+        "back": "/pɪˈtaɪ.ə/\nThanh long",
+        "known": false
+      },
+      {
+        "id": "id_6pt7biw",
+        "front": "Prunes",
+        "back": "/pruːnz/\nMận khô",
+        "known": false
+      },
+      {
+        "id": "id_gvb9vxd",
+        "front": "Pomelo",
+        "back": "/ˈpɒmɪləʊ/\nBưởi",
+        "known": false
+      },
+      {
+        "id": "id_6t0lfg5",
+        "front": "Pluot",
+        "back": "/ˈpluː.ɒt/\nMận",
+        "known": false
+      },
+      {
+        "id": "id_1sai8hq",
+        "front": "Raisin",
+        "back": "/ˈreɪ.zən/\nQuả nho khô",
+        "known": false
+      },
+      {
+        "id": "id_pfnbj8w",
+        "front": "Rambutan",
+        "back": "/ræmˈbuː.tən/\nQuả chôm chôm",
+        "known": false
+      },
+      {
+        "id": "id_f31f52y",
+        "front": "Raspberry",
+        "back": "/ˈrɑːz.bər.i/\nQuả mâm xôi",
+        "known": false
+      },
+      {
+        "id": "id_04p08iy",
+        "front": "Sapota",
+        "back": "/sə’poutə/\nQuả hồng xiêm",
+        "known": false
+      },
+      {
+        "id": "id_52ry8cc",
+        "front": "Soursop",
+        "back": "/ˈsaʊə.sɒp/\nQuả mãng cầu xiêm",
+        "known": false
+      },
+      {
+        "id": "id_sxv7wq7",
+        "front": "Star apple",
+        "back": "/’stɑ:r ‘æpl/\nQuả vú sữa",
+        "known": false
+      },
+      {
+        "id": "id_w7c0n30",
+        "front": "Starfruit",
+        "back": "/ˈstɑː.fruːt/\nQuả khế",
+        "known": false
+      },
+      {
+        "id": "id_plsiqf8",
+        "front": "Strawberry",
+        "back": "/ˈstrɔː.bər.i/\nQuả dâu tây",
+        "known": false
+      },
+      {
+        "id": "id_dv7dqo8",
+        "front": "Sugar cane",
+        "back": "/ˈʃʊɡ.ə ˌkeɪn/\nMía",
+        "known": false
+      },
+      {
+        "id": "id_d0smra2",
+        "front": "Tamarind",
+        "back": "/ˈtæm.ər.ɪnd/\nQuả me",
+        "known": false
+      },
+      {
+        "id": "id_5a9mqod",
+        "front": "Tomato",
+        "back": "/təˈmɑːtəʊ/\nCà chua",
+        "known": false
+      },
+      {
+        "id": "id_eva792i",
+        "front": "Ugli fruit",
+        "back": "/’ʌgli’fru:t/\nQuả chanh Tây Ấn",
+        "known": false
+      },
+      {
+        "id": "id_8p3hr2d",
+        "front": "Watermelon",
+        "back": "/ˈwɔː.təˌmel.ən/\nQuả dưa hấu",
+        "known": false
+      },
+      {
+        "id": "id_wpq99n9",
+        "front": "Squash",
+        "back": "/skwɒʃ/\nBí",
+        "known": false
+      },
+      {
+        "id": "id_iesjw3z",
+        "front": "Beetroot",
+        "back": "/ˈbiːt.ruːt/\nCủ dền",
+        "known": false
+      },
+      {
+        "id": "id_rvhgyh6",
+        "front": "Bell pepper",
+        "back": "/ˈbel ˌpep.ər/\nỚt chuông",
+        "known": false
+      },
+      {
+        "id": "id_bsn2q7e",
+        "front": "Hot pepper",
+        "back": "/hɒt, pep.ər/\nỚt cay",
+        "known": false
+      },
+      {
+        "id": "id_y8v8va7",
+        "front": "Carrot",
+        "back": "/ˈkær.ət/\nCà rốt",
+        "known": false
+      },
+      {
+        "id": "id_oaewaub",
+        "front": "Corn",
+        "back": "/kɔːn/\nNgô (bắp)",
+        "known": false
+      },
+      {
+        "id": "id_y2uzvfh",
+        "front": "Ginger",
+        "back": "/ˈdʒɪn.dʒər/\nGừng",
+        "known": false
+      },
+      {
+        "id": "id_y1ax71t",
+        "front": "Pumpkin",
+        "back": "/ˈpʌmp.kɪn/\nBí đỏ",
+        "known": false
+      },
+      {
+        "id": "id_bc4l8g3",
+        "front": "Sweet potato",
+        "back": "/ˌswiːt pəˈteɪ.təʊ/\nKhoai lang",
+        "known": false
+      },
+      {
+        "id": "id_5lgodzu",
+        "front": "Turmeric",
+        "back": "/ˈtɜː.mər.ɪk/\nNghệ",
+        "known": false
+      },
+      {
+        "id": "id_sqb17yv",
+        "front": "Aromatic",
+        "back": "Thơm ngon\nExample: I love the aromatic smell of freshly ground coffee",
+        "known": false
+      },
+      {
+        "id": "id_pihq9dv",
+        "front": "Acrid",
+        "back": "Chát\nExample: She could still smell the acrid green smoke.",
+        "known": false
+      },
+      {
+        "id": "id_y5ap7hk",
+        "front": "Bitter",
+        "back": "Đắng\nExample: So is the case when bitter and sweet flavors merge.",
+        "known": false
+      },
+      {
+        "id": "id_e6dmv26",
+        "front": "Bittersweet",
+        "back": "Vừa ngọt vừa đắng\nExample: Climbing bittersweet is a twisting, woody vine that climbs rope-like on trees.",
+        "known": false
+      },
+      {
+        "id": "id_5mehlh1",
+        "front": "Bland",
+        "back": "Nhạt nhẽo\nExample: He found the soup tasteless and bland.",
+        "known": false
+      },
+      {
+        "id": "id_qus0kcv",
+        "front": "Delicious",
+        "back": "Thơm tho, ngon miệng\nExample: Delicious home-baked brown bread.",
+        "known": false
+      },
+      {
+        "id": "id_m9xpma9",
+        "front": "Highly-seasoned",
+        "back": "Đậm vị\nExample: Taste and adjust the seasoning – the sauce should be fairly highly seasoned.",
+        "known": false
+      },
+      {
+        "id": "id_2bxab92",
+        "front": "Mild sweet",
+        "back": "Ngọt thanh\nExample: It can add a mild sweetness and dryness.",
+        "known": false
+      },
+      {
+        "id": "id_9qgefhc",
+        "front": "Spicy",
+        "back": "Cay\nExample: I love spicy food.",
+        "known": false
+      },
+      {
+        "id": "id_tgv8sxy",
+        "front": "Sweet",
+        "back": "Ngọt\nExample: I like sweet things.",
+        "known": false
+      },
+      {
+        "id": "id_bhw8k1y",
+        "front": "Salty",
+        "back": "Có muối, mặn\nExample: The very salty water buoyed her as she swam.",
+        "known": false
+      },
+      {
+        "id": "id_darhe9h",
+        "front": "Yummy",
+        "back": "Ngon\nExample: This cake is really yummy.",
+        "known": false
+      },
+      {
+        "id": "id_5qk2rfs",
+        "front": "A couch potato",
+        "back": "Lười nhác",
+        "known": false
+      },
+      {
+        "id": "id_lqep1x4",
+        "front": "Cherry-pick",
+        "back": "Lựa chọn rất cẩn thận",
+        "known": false
+      },
+      {
+        "id": "id_clewyau",
+        "front": "As cool as a cucumber",
+        "back": "Bình tĩnh, thoải mái",
+        "known": false
+      },
+      {
+        "id": "id_p6j9e8l",
+        "front": "Be like two peas in a pod",
+        "back": "Giống nhau như đúc",
+        "known": false
+      },
+      {
+        "id": "id_ihm311f",
+        "front": "Full of bean",
+        "back": "Tràn đầy năng lượng",
+        "known": false
+      },
+      {
+        "id": "id_rpet4wl",
+        "front": "Life is a bowl of cherries",
+        "back": "Cuộc sống sung túc, dễ dàng",
+        "known": false
+      },
+      {
+        "id": "id_x42jthe",
+        "front": "Go bananas",
+        "back": "Trở nên phấn khích hoặc tức giận",
+        "known": false
+      },
+      {
+        "id": "id_glgozyg",
+        "front": "The apple of someone’s eye",
+        "back": "Người mà ai đó yêu thích, trân trọng",
+        "known": false
+      },
+      {
+        "id": "id_vw1bm8i",
+        "front": "Compare apples and oranges",
+        "back": "Khác biệt, không giống nhau",
+        "known": false
+      },
+      {
+        "id": "id_tb4nkdn",
+        "front": "Go pear – shape",
+        "back": "Thất bại",
+        "known": false
+      }
+    ]
+  },
+  {
+    "topic": "Transportation",
+    "cards": [
+      {
+        "id": "id_9p85kej",
+        "front": "Overpass",
+        "back": "cầu vượt\nExample: Traffic in the area significantly improved thanks to the new overpass.",
+        "known": false
+      },
+      {
+        "id": "id_smi5sid",
+        "front": "Service road",
+        "back": "tuyến đường phụ\nExample: In my city, truck traffic is not allowed on service roads.",
+        "known": false
+      },
+      {
+        "id": "id_n1496hy",
+        "front": "On a/the service road",
+        "back": "trên tuyến đường phụ",
+        "known": false
+      },
+      {
+        "id": "id_nbxbi4r",
+        "front": "Traffic jam",
+        "back": "tắc đường\nExample: I was stuck in a traffic jam on my way here.",
+        "known": false
+      },
+      {
+        "id": "id_sn37qe1",
+        "front": "Long/severe traffic jam",
+        "back": "tắc đường dài/nghiêm trọng",
+        "known": false
+      },
+      {
+        "id": "id_ppxk8b1",
+        "front": "Be/get caught/stuck in a traffic jam",
+        "back": "bị kẹt trong tắc đường",
+        "known": false
+      },
+      {
+        "id": "id_opzgoii",
+        "front": "Traffic jam on the (road)",
+        "back": "kẹt xe trên (con đường)",
+        "known": false
+      },
+      {
+        "id": "id_4exibgw",
+        "front": "Emissions",
+        "back": "khí thải\nExample: Sulfur emissions from steel mills become acid rain.",
+        "known": false
+      },
+      {
+        "id": "id_38hmt2h",
+        "front": "Vehicle emissions",
+        "back": "khí thải từ phương tiện",
+        "known": false
+      },
+      {
+        "id": "id_a5xd4vx",
+        "front": "Greenhouse gas/carbon dioxide emissions",
+        "back": "khí thải nhà kính/CO2",
+        "known": false
+      },
+      {
+        "id": "id_mws90c6",
+        "front": "Cut/reduce/control emissions",
+        "back": "cắt/giảm/kiểm soát khí thải",
+        "known": false
+      },
+      {
+        "id": "id_inhkthz",
+        "front": "Emissions from (traffic)",
+        "back": "khí thải từ giao thông",
+        "known": false
+      },
+      {
+        "id": "id_vab8k11",
+        "front": "Noise pollution",
+        "back": "ô nhiễm tiếng ồn\nExample: Noise pollution is created by humans.",
+        "known": false
+      },
+      {
+        "id": "id_sfbnqgb",
+        "front": "To tackle/ease/reduce noise pollution",
+        "back": "giải quyết/giảm ô nhiễm tiếng ồn",
+        "known": false
+      },
+      {
+        "id": "id_ngs7s7y",
+        "front": "Noise pollution from (type of transport)",
+        "back": "ô nhiễm tiếng ồn từ (loại phương tiện)",
+        "known": false
+      },
+      {
+        "id": "id_hptfxgx",
+        "front": "Environmentally-friendly",
+        "back": "thân thiện với môi trường\nExample: Electric cars are a more environmentally-friendly alternative.",
+        "known": false
+      },
+      {
+        "id": "id_iwggpsu",
+        "front": "Environmentally-friendly vehicles/transportation/fuel/alternative",
+        "back": "phương tiện/giao thông/nhiên liệu/thay thế thân thiện môi trường",
+        "known": false
+      },
+      {
+        "id": "id_sodjhou",
+        "front": "Abroad",
+        "back": "ở nước ngoài\nExample: It’s much easier to travel abroad now than in the past.",
+        "known": false
+      },
+      {
+        "id": "id_85uymxj",
+        "front": "Travel/go abroad",
+        "back": "du lịch/đi nước ngoài",
+        "known": false
+      },
+      {
+        "id": "id_a9facco",
+        "front": "To be abroad",
+        "back": "ở nước ngoài",
+        "known": false
+      },
+      {
+        "id": "id_bkd1u1k",
+        "front": "To move abroad",
+        "back": "chuyển sang sống ở nước ngoài",
+        "known": false
+      },
+      {
+        "id": "id_8e7vdyi",
+        "front": "Business trip",
+        "back": "chuyến công tác\nExample: I went to New York on a business trip.",
+        "known": false
+      },
+      {
+        "id": "id_4jso306",
+        "front": "Take/make a business trip",
+        "back": "đi công tác",
+        "known": false
+      },
+      {
+        "id": "id_ebuycfp",
+        "front": "On a business trip",
+        "back": "trong chuyến công tác",
+        "known": false
+      },
+      {
+        "id": "id_tsry83u",
+        "front": "Commute",
+        "back": "đi lại\nExample: I commute to the city by bus every day.",
+        "known": false
+      },
+      {
+        "id": "id_f8x3531",
+        "front": "Daily/every day commute",
+        "back": "lộ trình đi lại hàng ngày",
+        "known": false
+      },
+      {
+        "id": "id_qj4g4ta",
+        "front": "Space travel",
+        "back": "du hành vũ trụ\nExample: There’s a lot of interest in space travel these days.",
+        "known": false
+      },
+      {
+        "id": "id_e2su5a7",
+        "front": "Human/commercial space travel",
+        "back": "du hành vũ trụ dân dụng/thương mại",
+        "known": false
+      },
+      {
+        "id": "id_qy2l28i",
+        "front": "The future of space travel",
+        "back": "tương lai của du hành vũ trụ",
+        "known": false
+      },
+      {
+        "id": "id_yhd6djv",
+        "front": "Achieve space travel",
+        "back": "đạt được khả năng du hành vũ trụ",
+        "known": false
+      },
+      {
+        "id": "id_c7n5glj",
+        "front": "Autonomous vehicle",
+        "back": "xe không người lái hoặc xe tự lái\nExample: I don’t believe autonomous vehicles can keep us safe.",
+        "known": false
+      },
+      {
+        "id": "id_vxqr29j",
+        "front": "Be driven by an autonomous vehicle",
+        "back": "được điều khiển bởi xe tự lái",
+        "known": false
+      },
+      {
+        "id": "id_xm3j3sw",
+        "front": "High-speed rail",
+        "back": "đường sắt cao tốc\nExample: In the future, high-speed rail networks will take over traditional rail systems.",
+        "known": false
+      },
+      {
+        "id": "id_q65y4qx",
+        "front": "By high-speed rail, high-speed rail network/route/service",
+        "back": "bằng đường sắt cao tốc, tuyến đường, dịch vụ",
+        "known": false
+      },
+      {
+        "id": "id_yh6f6vd",
+        "front": "High-speed rail accident/crash/disaster",
+        "back": "tai nạn đường sắt cao tốc",
+        "known": false
+      },
+      {
+        "id": "id_luv4qy1",
+        "front": "Bumper to bumper",
+        "back": "theo hàng dọc, nối đuôi nhau\nExample: The traffic’s usually bumper to bumper all the way to work.",
+        "known": false
+      },
+      {
+        "id": "id_oi2s48w",
+        "front": "Backseat driver",
+        "back": "người không lái xe nhưng thích ra lệnh\nExample: My wife’s very much a backseat driver - she always tells me to speed up or slow down.",
+        "known": false
+      },
+      {
+        "id": "id_niv12uf",
+        "front": "Hit the road",
+        "back": "khởi hành\nExample: I like to hit the road early when going on long journeys.",
+        "known": false
+      },
+      {
+        "id": "id_1ccegtl",
+        "front": "Hitch a lift/ride",
+        "back": "quá giang, đi nhờ xe\nExample: After the festival, we hitched a lift back to the city.",
+        "known": false
+      },
+      {
+        "id": "id_pkgt3di",
+        "front": "Beat the traffic",
+        "back": "ra đường trước giờ cao điểm để không bị tắc\nExample: I always try to leave early in the morning so I can beat the traffic on my way to school.",
+        "known": false
+      }
+    ]
+  }
+]
+}
+    const elems = {}
+
+    // Utils
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY)
+        state = raw ? JSON.parse(raw) : {topics: []}
+      }catch(e){state={topics:[]}}
+    }
+    function save(){localStorage.setItem(STORAGE_KEY, JSON.stringify(state))}
+
+    function ensureTopic(name){
+      let t = state.topics.find(x=>x.topic===name)
+      if(!t){t={topic:name,cards:[]};state.topics.push(t);save()}
+      return t
+    }
+
+    // UI render
+    function renderTopics(active){
+      const container = elems.topicsList
+      container.innerHTML=''
+      const all = document.createElement('div')
+      all.className='topic '+(active==='__all__'?'active':'')
+      all.textContent='Tất cả'
+      all.onclick=()=>selectTopic('__all__')
+      container.appendChild(all)
+      state.topics.forEach(t=>{
+        const el=document.createElement('div')
+        el.className='topic '+(t.topic===active?'active':'')
+        el.textContent=t.topic+' ('+t.cards.length+')'
+        el.onclick=()=>selectTopic(t.topic)
+        container.appendChild(el)
+      })
+    }
+
+    function flattenCards(topic){
+      if(topic==='__all__') return state.topics.flatMap(t=>t.cards.map(c=>({...c,topic:t.topic})))
+      const t = state.topics.find(x=>x.topic===topic)
+      return t ? t.cards.map(c=>({...c,topic:topic})) : []
+    }
+
+    function renderGrid(topic='__all__'){
+      const grid = elems.grid
+      const q = document.getElementById('globalSearch').value.trim().toLowerCase()
+      const hideKnown = document.getElementById('filterKnown').checked
+      let cards = flattenCards(topic)
+      if(hideKnown) cards = cards.filter(c=>!c.known)
+      if(q) cards = cards.filter(c=> (c.front||'').toLowerCase().includes(q) || (c.back||'').toLowerCase().includes(q))
+      grid.innerHTML=''
+      elems.currentTopicTitle.textContent = topic==='__all__' ? 'Tất cả flashcards' : topic
+      elems.countInfo.textContent = cards.length + ' cards'
+      cards.forEach(c=>{
+        const wrap=document.createElement('div');wrap.className='card panel'
+        const inner=document.createElement('div');inner.className='inner'
+        const front=document.createElement('div');front.className='face front'
+        const back=document.createElement('div');back.className='face back'
+        front.innerHTML=`<div style="font-weight:700;font-size:16px">${escapeHtml(c.front||'')}</div><div class="meta"><div class="small">${escapeHtml(c.topic||'')}</div><div class="small">${c.known? 'Known':'New'}</div></div>`
+        back.innerHTML=`<div style="font-size:14px">${escapeHtml(c.back||'')}</div><div style="display:flex;justify-content:space-between;margin-top:12px"><div class="small">ID: ${c.id||''}</div><div><button class="btn ghost" data-action="toggleKnown">${c.known? 'Đánh dấu chưa biết':'Đánh dấu đã biết'}</button> <button class="btn ghost" data-action="edit">Sửa</button> <button class="btn" data-action="delete">Xóa</button></div></div>`
+        inner.appendChild(front);inner.appendChild(back);wrap.appendChild(inner)
+        inner.onclick = (ev)=>{
+          if(ev.target.tagName.toLowerCase()==='button') return // buttons handled separately
+          inner.classList.toggle('flipped')
+        }
+        // button handlers
+        back.querySelectorAll('button').forEach(b=>{
+          b.addEventListener('click',(ev)=>{
+            ev.stopPropagation();
+            const act = b.getAttribute('data-action')
+            if(act==='toggleKnown'){
+              toggleKnown(c)
+            }else if(act==='edit'){
+              openModalFor(c)
+            }else if(act==='delete'){
+              deleteCard(c)
+            }
+          })
+        })
+        grid.appendChild(wrap)
+      })
+    }
+
+    function toggleKnown(card){
+      const t = state.topics.find(x=>x.topic===card.topic)
+      if(!t) return
+      const target = t.cards.find(x=>x.id===card.id)
+      if(!target) return
+      target.known = !target.known
+      save();renderTopics(currentTopic);renderGrid(currentTopic)
+    }
+
+    function deleteCard(card){
+      if(!confirm('Xóa flashcard này?')) return
+      const t = state.topics.find(x=>x.topic===card.topic)
+      t.cards = t.cards.filter(x=>x.id!==card.id)
+      save();renderTopics(currentTopic);renderGrid(currentTopic)
+    }
+
+    // modal form
+    let currentTopic='__all__'
+    function openModalFor(card){
+      document.getElementById('modal').style.display='flex'
+      document.getElementById('modalTitle').textContent = card ? 'Sửa flashcard' : 'Thêm flashcard'
+      document.getElementById('cardTopic').value = card ? card.topic : ''
+      document.getElementById('cardFront').value = card ? card.front : ''
+      document.getElementById('cardBack').value = card ? card.back : ''
+      document.cardToEdit = card || null
+    }
+
+    function closeModal(){document.getElementById('modal').style.display='none';document.cardToEdit=null}
+
+    function saveForm(ev){
+      ev.preventDefault()
+      const topic = document.getElementById('cardTopic').value.trim() || 'General'
+      const front = document.getElementById('cardFront').value.trim()
+      const back = document.getElementById('cardBack').value.trim()
+      if(!front){alert('Mặt trước bắt buộc');return}
+      const t = ensureTopic(topic)
+      if(document.cardToEdit){
+        // update
+        const c = t.cards.find(x=>x.id===document.cardToEdit.id)
+        c.front=front;c.back=back;save()
+      }else{
+        const id = 'id_' + Math.random().toString(36).slice(2,9)
+        t.cards.unshift({id,front,back,known:false})
+        save()
+      }
+      closeModal();renderTopics(currentTopic);renderGrid(currentTopic)
+    }
+
+    function selectTopic(name){currentTopic=name;renderTopics(name);renderGrid(name)}
+
+    // Import JSON
+    function importJson(){
+      const txt = document.getElementById('uploadArea').value.trim()
+      if(!txt) {alert('Dán JSON vào ô upload');return}
+      try{
+        const data = JSON.parse(txt)
+        if(!Array.isArray(data)) throw new Error('Expected array of topics')
+        data.forEach(t=>{
+          const topicName = t.topic || 'General'
+          const target = ensureTopic(topicName)
+          if(Array.isArray(t.cards)){
+            t.cards.forEach(c=>{
+              const id = c.id || ('id_'+Math.random().toString(36).slice(2,9))
+              if(!target.cards.some(x=>x.id===id)) target.cards.push({id,front:c.front||'',back:c.back||'',known:!!c.known})
+            })
+          }
+        })
+        save();renderTopics(currentTopic);renderGrid(currentTopic);alert('Import thành công')
+      }catch(e){alert('Lỗi JSON: '+e.message)}
+    }
+
+    function exportJson(){
+      const data = state.topics
+      const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'})
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a');a.href=url;a.download='ai-ielts-flashcards.json';a.click();URL.revokeObjectURL(url)
+    }
+
+    function clearStorage(){if(confirm('Xóa toàn bộ dữ liệu local?')){localStorage.removeItem(STORAGE_KEY);state={topics:[]};renderTopics('__all__');renderGrid('__all__')}}
+
+    function escapeHtml(s){return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
+
+    // sample data
+    function loadSample(){
+      const sample = [{topic:'Environment',cards:[{id:'env1',front:'pollution',back:'ô nhiễm'},{id:'env2',front:'sustainable development',back:'phát triển bền vững'}]},{topic:'Education',cards:[{id:'edu1',front:'curriculum',back:'chương trình giảng dạy'}]}]
+      state.topics = sample
+      save();renderTopics('__all__');renderGrid('__all__')
+    }
+
+    // init
+    window.addEventListener('DOMContentLoaded',()=>{
+      elems.topicsList = document.getElementById('topicsList')
+      elems.grid = document.getElementById('grid')
+      elems.currentTopicTitle = document.getElementById('currentTopicTitle')
+      elems.countInfo = document.getElementById('countInfo')
+
+      load();renderTopics('__all__');renderGrid('__all__')
+
+      document.getElementById('importBtn').onclick=importJson
+      document.getElementById('sampleBtn').onclick=()=>{if(confirm('Ghi đè dữ liệu hiện tại bằng mẫu?')) loadSample()}
+      document.getElementById('newTopicBtn').onclick=()=>{
+        const name = prompt('Tên chủ đề mới:')
+        if(name) {ensureTopic(name);save();renderTopics(currentTopic);renderGrid(currentTopic)}
+      }
+      document.getElementById('addCardBtn').onclick=()=>openModalFor(null)
+      document.getElementById('closeModal').onclick=closeModal
+      document.getElementById('cardForm').addEventListener('submit',saveForm)
+      document.getElementById('downloadBtn').onclick=exportJson
+      document.getElementById('globalSearch').addEventListener('input',()=>renderGrid(currentTopic))
+      document.getElementById('filterKnown').addEventListener('change',()=>renderGrid(currentTopic))
+      document.getElementById('gotoPractice').addEventListener('click', () => {
+        window.location.href = 'Trang2.html';
+      });
+      document.getElementById('gotoGame').addEventListener('click', () => {
+        window.location.href = 'game.html'; // đường dẫn tới trang game của bạn
+      });
+    })
+  </script>
+</body>
+</html>

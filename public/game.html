@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Game Chạy Vượt Chướng Ngại Vật</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      background-color: #B3E5FC; /* xanh dương pastel */
+    }
+    canvas {
+      margin-top: 100px;
+      background-color: transparent; /* nếu bạn muốn giữ ảnh nền canvas */
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      border-radius: 12px;
+      border: none;
+      background-color: #ffb6c1;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #ff9fbf;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    }
+
+    button.ghost {
+      background-color: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+
+    button.ghost:hover {
+      background-color: white;
+      color: #ffb6c1;
+    }
+  </style>
+
+</head>
+<body>
+
+  <!-- Navbar -->
+
+  <nav style="
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; 
+    background-color:#ffb6c1; 
+    padding:10px; 
+    display:flex; 
+    align-items:center; 
+    justify-content:space-between; 
+    gap:10px; 
+    z-index: 1000;
+  ">
+    <div style="font-family: 'Press Start 2P'; font-size: 20px; color: white;">
+      GAME BREAK
+    </div>
+
+<div>
+  <a href="Trangchu.html"><button class="ghost">Flashcards</button></a>
+  <a href="Trang2.html"><button class="ghost">Practice</button></a>
+</div>
+
+  </nav>
+
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+
+<div>
+  <button id="playBtn">Play</button>
+  <button id="pauseBtn">Pause</button>
+  <button id="restartBtn">Restart</button>
+</div>
+
+<script>
+/* ------------------------- CANVAS & CTX ------------------------- */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+/* ---------------------------- ÂM THANH ---------------------------- */
+let bgMusic = new Audio('sounds/bg.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.5;
+
+let jumpSound = new Audio('sounds/jump.mp3');
+let hitSound = new Audio('sounds/hit.mp3');
+let itemSound = new Audio('sounds/item.mp3');
+
+let gameRunning = false;
+let gameOver = false;
+
+/* ---------------------------- PLAYER ---------------------------- */
+let player = {
+  x: 100,
+  y: 0, // sẽ set đúng y khi load xong ảnh
+  width: 80,
+  height: 80,
+  dy: 0,
+  gravity: 0.8,
+  jumpPower: -18,
+  speedBoost: 0
+};
+
+/* ---------------------------- ẢNH GAME ---------------------------- */
+let playerImg = new Image();
+playerImg.src = 'images/anh1.png';
+
+let obstacleImg = new Image();
+obstacleImg.src = 'images/anh2.png';
+
+let itemImg = new Image();
+itemImg.src = 'images/anh3.png';
+
+let bgImg = new Image();
+bgImg.src = 'images/background.jpg';
+
+/* ---------------------------- GROUND ---------------------------- */
+const GRASS_GROUND_RATIO = 0.6806;
+function getGrassGroundY() { return canvas.height * GRASS_GROUND_RATIO; }
+function getGroundObjectY(objHeight) { return getGrassGroundY() - objHeight; }
+
+/* ---------------------------- HIỂN THỊ LÚC LOAD ---------------------------- */
+let bgLoaded = false;
+let playerLoaded = false;
+
+bgImg.onload = () => { bgLoaded = true; drawInitial(); };
+playerImg.onload = () => { playerLoaded = true; drawInitial(); };
+
+function drawInitial() {
+  if (!bgLoaded || !playerLoaded) return;
+
+  // player đứng đúng mặt cỏ
+  player.y = getGroundObjectY(player.height);
+
+  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+}
+
+/* ---------------------------- CONTROLS ---------------------------- */
+document.addEventListener('keydown', e => {
+  const groundY = getGrassGroundY();
+  if (e.code === 'Space' && player.y >= groundY - player.height) {
+    player.dy = player.jumpPower;
+    jumpSound.currentTime = 0;
+    jumpSound.play();
+  }
+});
+
+/* ---------------------------- SPAWN ---------------------------- */
+let obstacles = [], items = [], frame = 0, gameSpeed = 7, score = 0, animationId;
+
+function spawnObstacle() {
+  const h = 50;
+  obstacles.push({x: canvas.width, y: getGroundObjectY(h), width: 50, height: h});
+}
+
+function spawnItem() {
+  let randomY = Math.random() * 200 + 50;
+  const groundLimit = getGroundObjectY(50);
+  if (randomY > groundLimit) randomY = groundLimit;
+  items.push({x: canvas.width, y: randomY, width: 50, height: 50});
+}
+
+/* ---------------------------- COLLISION ---------------------------- */
+function isColliding(a,b){
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+/* ---------------------------- UPDATE ---------------------------- */
+function update(){
+  frame++;
+  player.dy += player.gravity;
+  player.y += player.dy;
+  const groundY = getGrassGroundY();
+  if(player.y > groundY - player.height){ player.y = groundY - player.height; player.dy = 0; }
+
+  if(frame % 120 === 0) spawnObstacle();
+  if(frame % 300 === 0) spawnItem();
+
+  obstacles.forEach((obs,i)=>{
+    obs.x -= gameSpeed + player.speedBoost;
+    if(isColliding(player,obs)){ gameOver = true; gameRunning = false; hitSound.play(); }
+    if(obs.x + obs.width < 0) obstacles.splice(i,1);
+  });
+
+  items.forEach((itm,i)=>{
+    itm.x -= gameSpeed + player.speedBoost;
+    if(isColliding(player,itm)){
+      player.speedBoost = 5;
+      setTimeout(()=>player.speedBoost=0,2000);
+      items.splice(i,1);
+      score +=10;
+      itemSound.play();
+    }
+    if(itm.x + itm.width < 0) items.splice(i,1);
+  });
+}
+
+/* ---------------------------- DRAW ---------------------------- */
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(bgImg,0,0,canvas.width,canvas.height);
+  ctx.drawImage(playerImg,player.x,player.y,player.width,player.height);
+  obstacles.forEach(obs => ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height));
+  items.forEach(itm => ctx.drawImage(itemImg, itm.x, itm.y, itm.width, itm.height));
+  ctx.textAlign="left";
+  ctx.font="20px 'Press Start 2P'";
+  ctx.fillStyle="black";
+  ctx.fillText("Score: "+score,20,40);
+
+  if(gameOver){
+    ctx.fillStyle='red';
+    ctx.font='40px "Press Start 2P"';
+    ctx.textAlign='center';
+    ctx.fillText('GAME OVER',canvas.width/2,canvas.height/2);
+  }
+}
+
+/* ---------------------------- LOOP ---------------------------- */
+function loop(){
+  if(gameRunning){ update(); draw(); animationId=requestAnimationFrame(loop); }
+}
+
+/* ---------------------------- BUTTONS ---------------------------- */
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+playBtn.addEventListener('click', ()=>{
+  if(gameOver){ restartGame(); return; }
+  if(!gameRunning){ gameRunning = true; loop(); bgMusic.play().catch(()=>{}); }
+});
+pauseBtn.addEventListener('click', ()=>{
+  gameRunning=false; cancelAnimationFrame(animationId);
+});
+restartBtn.addEventListener('click',restartGame);
+
+/* ---------------------------- RESTART ---------------------------- */
+function restartGame(){
+  gameRunning=false;
+  cancelAnimationFrame(animationId);
+  player.dy=0; player.speedBoost=0;
+  obstacles=[]; items=[]; frame=0; score=0; gameOver=false;
+  player.y = getGroundObjectY(player.height);
+  gameRunning=true;
+  loop();
+  bgMusic.currentTime=0; bgMusic.play();
+}
+</script>
+
+</body>
+</html>
