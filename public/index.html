@@ -79,7 +79,7 @@
 <footer>Built for practice — dữ liệu lưu local (localStorage).</footer>
 
 <script>
-  const API_URL = "https://ai-ielts-flashcards.onrender.com/api/generate";
+  const API_URL = "https://ai-ielts-flashcards.onrender.com/improve"; // <--- SỬA THÀNH /improve
   const STORAGE_KEY = 'ai-ielts-sentences'
   const jsonData = [
   {
@@ -6586,13 +6586,15 @@ let sentencesData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     document.getElementById('userSentence').value = '';
   });
 
-  async function suggestBetterSentence(sentence, word) {
-    try {
-      const res = await fetch("/improve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentence, word })
-      });
+async function suggestBetterSentence(sentence, word) {
+    try {
+      // Sửa lỗi: Gọi biến API_URL đã được định nghĩa ở trên!
+      const res = await fetch(API_URL, { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sentence, word })
+      });
+        // ... (phần còn lại của hàm)
 
       const data = await res.json();
       return data.suggestion || "⚠️ Không có gợi ý.";
