@@ -55,7 +55,10 @@ app.post("/improve", async (req, res) => {
 
     } catch (err) {
         console.error("LỖI GỌI API GEMINI:", err.message); 
-        res.status(500).json({ suggestion: "⚠️ Lỗi khi kết nối AI." });
+// 🎯 Cần Thêm: Gửi mã lỗi 500 về client
+        return res.status(500).json({ 
+            suggestion: "⚠️ Lỗi server: Không thể kết nối hoặc xử lý yêu cầu AI." 
+        });
     }
 });
 
