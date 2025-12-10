@@ -1,0 +1,5 @@
+# Bỏ qua folder chứa các gói thư viện
+node_modules
+
+# Bỏ qua file chứa khóa API
+.env
