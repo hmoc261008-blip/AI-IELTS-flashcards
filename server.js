@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { GoogleGenAI } from "@google/generative-ai"; // <-- SỬA TÊN GÓI Ở ĐÂY
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ... (các phần code còn lại của server.js không cần sửa)
 // Đọc biến môi trường
