@@ -41,7 +41,7 @@ app.post("/improve", async (req, res) => {
 4. **Chỉ trả về duy nhất câu đã được cải thiện (không thêm lời giải thích hay tiêu đề).**`;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await ai.generateContent({
             model: AI_MODEL, 
             contents: prompt,
         });
