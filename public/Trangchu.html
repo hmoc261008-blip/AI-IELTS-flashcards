@@ -1,6 +1,3 @@
-
-
-
 <!doctype html>
 <html lang="vi">
 <head>
@@ -69,13 +66,19 @@
 </header>
   <main>
     <aside class="panel topics-panel">
-      <!-- VIDEO HƯỚNG DẪN -->
+      <!-- VIDEO HƯỚNG DẪN - YOUTUBE -->
       <div style="margin-bottom:16px">
         <strong>Hướng dẫn</strong>
-        <video controls autoplay muted style="width:100%; border-radius:12px; margin-top:8px;">
-          <source src="[https://drive.google.com/file/d/18L3EXks_T1BPwHpSo6Syp-AqXKKKNzVi/view?usp=sharing]" type="video/mp4">
-          Trình duyệt của bạn không hỗ trợ video.
-        </video>
+        <div style="position:relative; padding-bottom:56.25%; height:0; margin-top:8px; border-radius:12px; overflow:hidden;">
+          <iframe 
+            src="https://www.youtube.com/embed/vjBRUuDJvJY" 
+            style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen
+            title="Hướng dẫn sử dụng AI-IELTs Flashcards">
+          </iframe>
+        </div>
       </div>
       <hr style="margin:12px 0;border:none;border-top:1px solid #eef2f7">
 
@@ -6564,7 +6567,7 @@
       }
     ]
   }
-]
+ ]
 }
     const elems = {}
 
@@ -6572,9 +6575,18 @@
     function load(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY)
-        state = raw ? JSON.parse(raw) : {topics: []}
-      }catch(e){state={topics:[]}}
+        if (raw) {
+          // Đã có dữ liệu người dùng -> dùng nó
+          state = JSON.parse(raw)
+        }
+        // Nếu không có raw, KHÔNG làm gì cả
+        // state vẫn giữ nguyên dữ liệu mặc định (1000+ cards)
+      }catch(e){
+        console.error('Lỗi đọc localStorage:', e)
+        // Nếu lỗi, state vẫn giữ dữ liệu mặc định
+      }
     }
+
     function save(){localStorage.setItem(STORAGE_KEY, JSON.stringify(state))}
 
     function ensureTopic(name){
@@ -6582,7 +6594,6 @@
       if(!t){t={topic:name,cards:[]};state.topics.push(t);save()}
       return t
     }
-
     // UI render
     function renderTopics(active){
       const container = elems.topicsList
