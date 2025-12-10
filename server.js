@@ -22,6 +22,7 @@ if (!GEMINI_API_KEY) {
 
 const ai = new GoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
 const AI_MODEL = "gemini-2.5-flash";
+const gemini = ai.getGenerativeModel({ model: AI_MODEL });
 
 // Serve static files
 app.use(express.static("public"));
@@ -41,10 +42,12 @@ app.post("/improve", async (req, res) => {
 4. **Chỉ trả về duy nhất câu đã được cải thiện (không thêm lời giải thích hay tiêu đề).**`;
 
     try {
-        const response = await ai.generateContent({
-            model: AI_MODEL, 
+// Trong hàm app.post("/improve", ...)
+// ⚠️ SỬ DỤNG ĐỐI TƯỢNG MODEL ĐÃ KHỞI TẠO
+        const response = await gemini.generateContent({ 
             contents: prompt,
         });
+// (Lưu ý: Không cần truyền model vào đây nữa vì đã định nghĩa lúc khởi tạo 'gemini')
 
         const suggestion = response.text.trim();
         
