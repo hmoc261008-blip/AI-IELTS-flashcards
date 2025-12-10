@@ -79,7 +79,6 @@
 <footer>Built for practice — dữ liệu lưu local (localStorage).</footer>
 
 <script>
-  const API_URL = "https://ai-ielts-flashcards.onrender.com/improve"; // <--- SỬA THÀNH /improve
   const STORAGE_KEY = 'ai-ielts-sentences'
   const jsonData = [
   {
@@ -6586,15 +6585,21 @@ let sentencesData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     document.getElementById('userSentence').value = '';
   });
 
-async function suggestBetterSentence(sentence, word) {
-    try {
-      // Sửa lỗi: Gọi biến API_URL đã được định nghĩa ở trên!
-      const res = await fetch(API_URL, { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentence, word })
-      });
-        // ... (phần còn lại của hàm)
+// ⚠️ THAY THẾ 'https://YOUR-BACKEND-URL-HERE' BẰNG URL SERVER CỦA BẠN SAU KHI DEPLOY
+  const API_BASE_URL = "https://ai-ielts-flashcards.onrender.com"; 
+  const API_ROUTE = "/improve";
+  // ... (code load/init khác)
+
+  // ... (hàm suggestBetterSentence)
+  async function suggestBetterSentence(sentence, word) {
+    try {
+      // GỌI API BẰNG URL ĐẦY ĐỦ
+      const res = await fetch(`${API_BASE_URL}${API_ROUTE}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sentence, word })
+      });
+      // ... (phần còn lại)
 
       const data = await res.json();
       return data.suggestion || "⚠️ Không có gợi ý.";

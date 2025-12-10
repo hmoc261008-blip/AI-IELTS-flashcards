@@ -1,8 +1,10 @@
+// file: server.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from "@google/generative-ai"; // <-- SỬA TÊN GÓI Ở ĐÂY
 
+// ... (các phần code còn lại của server.js không cần sửa)
 // Đọc biến môi trường
 dotenv.config();
 
@@ -18,7 +20,7 @@ if (!GEMINI_API_KEY) {
     process.exit(1); 
 }
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY }); 
+const ai = new GoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
 const AI_MODEL = "gemini-2.5-flash";
 
 // Serve static files
