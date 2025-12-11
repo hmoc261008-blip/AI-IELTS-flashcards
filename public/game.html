@@ -155,7 +155,6 @@ function drawInitial() {
   ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
 }
 
-/* ---------------------------- CONTROLS ---------------------------- */
 /* ---------------------------- CONTROLS (CẬP NHẬT) ---------------------------- */
 function handleJump() {
   const groundY = getGrassGroundY();
@@ -175,17 +174,22 @@ document.addEventListener('keydown', e => {
 });
 
 // Lắng nghe sự kiện chạm (cho Mobile/Touchscreen)
-// Sử dụng 'touchstart' trên body để bắt trọn mọi cú chạm
 document.addEventListener('touchstart', e => {
-    // Ngăn chặn hành vi mặc định của trình duyệt (như phóng to/thu nhỏ)
-    e.preventDefault(); 
+    // 1. Kiểm tra xem người dùng có chạm vào nút bấm không
+    const isButton = e.target.tagName === 'BUTTON' || e.target.closest('a') !== null;
     
-    // Nếu chạm vào nút bấm, thì bỏ qua (nút bấm đã có sự kiện click riêng)
-    const isButton = e.target.tagName === 'BUTTON';
     if (!isButton) {
-      handleJump();
-    }
-}, { passive: false }); // Sử dụng { passive: false } để có thể dùng e.preventDefault()
+        // 2. Nếu không chạm vào nút bấm/link (ví dụ: chạm vào canvas/body)
+        
+        // Ngăn chặn hành vi mặc định của trình duyệt (như cuộn, phóng to/thu nhỏ) 
+        // để kích hoạt hành động nhảy.
+        e.preventDefault(); 
+        
+        // Kích hoạt nhảy
+        handleJump();
+    } 
+    // Nếu là nút bấm, không gọi preventDefault() để trình duyệt có thể xử lý sự kiện click
+}, { passive: false }); // Giữ { passive: false } để có thể dùng e.preventDefault() cho việc nhảy
 
 /* ---------------------------- SPAWN ---------------------------- */
 let obstacles = [], items = [], frame = 0, gameSpeed = 7, score = 0, animationId;
