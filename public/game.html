@@ -53,12 +53,17 @@
       background-color: white;
       color: #ffb6c1;
     }
+    
+    /* Style cho khu vực chỉnh sửa tên nhân vật */
+    #charNameDisplay[contenteditable="true"]:focus {
+        border-color: #ffb6c1 !important;
+        outline: none;
+        background-color: #fce4ec; /* Nền nhẹ khi đang chỉnh sửa */
+    }
   </style>
 
 </head>
 <body>
-
-  <!-- Navbar -->
 
   <nav style="
     position: fixed; 
@@ -89,12 +94,75 @@
   <button id="playBtn">Play</button>
   <button id="pauseBtn">Pause</button>
   <button id="restartBtn">Restart</button>
+  <button id="selectCharBtn">Select Character</button> 
+</div>
+
+<div id="characterControls" style="
+  display:none; 
+  margin-top: 10px; 
+  align-items: center; 
+  justify-content: center; 
+  width: 100%;
+  padding: 5px; 
+">
+  <button id="prevCharBtn"> &lt; </button>
+  
+  <div id="charNameDisplay" 
+       style="
+         font-family: 'Press Start 2P', cursive; 
+         color: #333; 
+         margin: 0 15px; 
+         font-size: 14px;
+         line-height: 1.2; 
+         padding: 5px 10px; 
+         border: 2px solid transparent; 
+         min-width: 150px; 
+         text-align: center;
+         cursor: pointer;
+         outline: none;
+       ">Character 1</div>
+       
+  <button id="nextCharBtn"> &gt; </button>
+  <button id="confirmCharBtn" style="background-color: #4CAF50; margin-left: 20px;">Confirm</button>
+</div>
+
+<div id="uploadControl" style="margin-top: 15px; display: flex; align-items: center; justify-content: center;">
+    <input type="file" id="charFileInput" accept="image/*" style="font-family: 'Press Start 2P', cursive; font-size: 12px;">
+    <button id="loadCustomCharBtn" style="margin-left: 10px; background-color: #007bff;">
+        Load Custom
+    </button>
 </div>
 
 <script>
 /* ------------------------- CANVAS & CTX ------------------------- */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+/* ---------------------------- BUTTONS (KHAI BÁO TẤT CẢ TẠI ĐÂY) ---------------------------- */
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const restartBtn = document.getElementById('restartBtn');
+const selectCharBtn = document.getElementById('selectCharBtn'); 
+
+const charControls = document.getElementById('characterControls');
+const charNameDisplay = document.getElementById('charNameDisplay');
+const prevCharBtn = document.getElementById('prevCharBtn');     
+const nextCharBtn = document.getElementById('nextCharBtn');     
+const confirmCharBtn = document.getElementById('confirmCharBtn'); 
+
+const charFileInput = document.getElementById('charFileInput');
+const loadCustomCharBtn = document.getElementById('loadCustomCharBtn');
+
+
+/* ---------------------------- CẤU HÌNH NHÂN VẬT ---------------------------- */
+const CHARACTER_CONFIGS = [
+    { name: "Hiep si Moc", src: 'images/anh1.png', width: 80, height: 80}, 
+    { name: "Đoi an", src: 'images/anh4.png', width: 80, height: 80 }, 
+    { name: "Cong tua Moc", src: 'images/anh5.png', width: 80, height: 80 },
+    { name: "Nhan vien y te", src: 'images/anh6.png', width: 80, height: 80 }
+];
+let currentPlayerIndex = 0; 
+let isSelectingCharacter = false; 
 
 /* ---------------------------- ÂM THANH ---------------------------- */
 let bgMusic = new Audio('sounds/bg.mp3');
@@ -111,7 +179,7 @@ let gameOver = false;
 /* ---------------------------- PLAYER ---------------------------- */
 let player = {
   x: 100,
-  y: 0, // sẽ set đúng y khi load xong ảnh
+  y: 0, 
   width: 80,
   height: 80,
   dy: 0,
@@ -122,14 +190,10 @@ let player = {
 
 /* ---------------------------- ẢNH GAME ---------------------------- */
 let playerImg = new Image();
-playerImg.src = 'images/anh1.png';
-
 let obstacleImg = new Image();
 obstacleImg.src = 'images/anh2.png';
-
 let itemImg = new Image();
 itemImg.src = 'images/anh3.png';
-
 let bgImg = new Image();
 bgImg.src = 'images/background.jpg';
 
@@ -143,19 +207,153 @@ let bgLoaded = false;
 let playerLoaded = false;
 
 bgImg.onload = () => { bgLoaded = true; drawInitial(); };
-playerImg.onload = () => { playerLoaded = true; drawInitial(); };
+
+// Hàm tải ảnh nhân vật
+function loadPlayerImage(src) {
+    playerLoaded = false; 
+    playerImg.src = src;
+    playerImg.onload = () => { 
+        playerLoaded = true; 
+        // Cập nhật kích thước player dựa trên config nhân vật đã chọn
+        player.width = CHARACTER_CONFIGS[currentPlayerIndex].width;
+        player.height = CHARACTER_CONFIGS[currentPlayerIndex].height;
+        player.y = getGroundObjectY(player.height); 
+        drawInitial(); 
+    };
+    playerImg.onerror = () => {
+        console.error("Lỗi khi tải ảnh nhân vật: " + src);
+        playerLoaded = true; 
+        drawInitial(); 
+    }
+}
+// Gọi hàm để tải ảnh nhân vật ban đầu
+loadPlayerImage(CHARACTER_CONFIGS[currentPlayerIndex].src); 
+
 
 function drawInitial() {
   if (!bgLoaded || !playerLoaded) return;
-
-  // player đứng đúng mặt cỏ
-  player.y = getGroundObjectY(player.height);
-
+  // Thiết lập vị trí ban đầu (không phải chế độ chọn)
+  if (!isSelectingCharacter) player.x = 100;
+  
   ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
   ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
 }
 
-/* ---------------------------- CONTROLS (CẬP NHẬT) ---------------------------- */
+/* -------------------------- QUẢN LÝ CHỌN NHÂN VẬT -------------------------- */
+function updateCharacterDisplay() {
+    const char = CHARACTER_CONFIGS[currentPlayerIndex];
+    
+    // Cập nhật kích thước player ngay khi chọn nhân vật
+    player.width = char.width;
+    player.height = char.height;
+    
+    loadPlayerImage(char.src);
+    
+    if (charNameDisplay) {
+        charNameDisplay.textContent = char.name;
+        
+        // KIỂM TRA ĐỂ BẬT CHỨC NĂNG CHỈNH SỬA TÊN
+        // Nhân vật tùy chỉnh sẽ có src là Data URL (bắt đầu bằng 'data:image/')
+        const isCustomChar = char.src.startsWith('data:image/');
+        
+        if (isCustomChar) {
+            charNameDisplay.setAttribute('contenteditable', 'true');
+            charNameDisplay.style.borderColor = '#ffb6c1'; // Hiện viền khi chỉnh sửa
+            charNameDisplay.title = "Nhấp để đổi tên";
+        } else {
+            charNameDisplay.setAttribute('contenteditable', 'false');
+            charNameDisplay.style.borderColor = 'transparent'; // Ẩn viền
+            charNameDisplay.title = "";
+        }
+    }
+}
+
+function nextCharacter() {
+    currentPlayerIndex = (currentPlayerIndex + 1) % CHARACTER_CONFIGS.length;
+    updateCharacterDisplay();
+}
+
+function prevCharacter() {
+    currentPlayerIndex = (currentPlayerIndex - 1 + CHARACTER_CONFIGS.length) % CHARACTER_CONFIGS.length;
+    updateCharacterDisplay();
+}
+
+function toggleSelectMode(activate) {
+    isSelectingCharacter = activate;
+    
+    // Ẩn/Hiện các nút điều khiển chính
+    if (playBtn) playBtn.style.display = activate ? 'none' : 'inline-block';
+    if (pauseBtn) pauseBtn.style.display = activate ? 'none' : 'inline-block';
+    if (restartBtn) restartBtn.style.display = activate ? 'none' : 'inline-block';
+    if (selectCharBtn) selectCharBtn.style.display = activate ? 'none' : 'inline-block';
+
+    // Hiện/Ẩn các nút điều khiển nhân vật
+    if (charControls) charControls.style.display = activate ? 'flex' : 'none';
+    
+    // Ẩn/Hiện khu vực tải ảnh tùy chỉnh
+    const uploadControl = document.getElementById('uploadControl');
+    if (uploadControl) uploadControl.style.display = activate ? 'none' : 'flex';
+
+
+    if (activate) {
+        // Đặt nhân vật vào giữa màn hình
+        player.x = canvas.width / 2 - player.width / 2;
+        updateCharacterDisplay();
+    } else {
+        // Trở về vị trí ban đầu
+        player.x = 100;
+        updateCharacterDisplay(); 
+    }
+    draw(); 
+}
+
+/* -------------------------- LOGIC TẢI ẢNH TÙY CHỌN -------------------------- */
+function loadCustomCharacter() {
+    const file = charFileInput.files[0];
+    const defaultName = "Custom Char"; // Tên mặc định
+
+    if (!file) {
+        alert("Vui lòng chọn một file ảnh trước.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const customSrc = e.target.result;
+        
+        // 1. Xóa nhân vật tùy chọn cũ (dựa trên source là Data URL)
+        const lastIndex = CHARACTER_CONFIGS.length - 1;
+        if (CHARACTER_CONFIGS[lastIndex] && CHARACTER_CONFIGS[lastIndex].src.startsWith('data:image/')) {
+            CHARACTER_CONFIGS.pop();
+        }
+
+        // 2. Thêm nhân vật tùy chọn mới vào cuối danh sách
+        CHARACTER_CONFIGS.push({ 
+            name: defaultName, 
+            src: customSrc, 
+            width: 80, 
+            height: 80
+        });
+
+        // 3. Chuyển ngay đến nhân vật mới tải lên
+        currentPlayerIndex = CHARACTER_CONFIGS.length - 1;
+        updateCharacterDisplay();
+        
+        // Chuyển sang chế độ chọn nhân vật
+        toggleSelectMode(true); 
+        
+        // Tự động focus vào DIV để người dùng gõ
+        if (charNameDisplay) {
+            charNameDisplay.focus(); 
+            // Chọn toàn bộ văn bản để người dùng gõ đè lên dễ dàng
+            document.execCommand('selectAll', false, null);
+        }
+    };
+
+    reader.readAsDataURL(file); // Đọc file ảnh thành Data URL
+}
+
+/* ---------------------------- CONTROLS ---------------------------- */
 function handleJump() {
   const groundY = getGrassGroundY();
   // Chỉ cho phép nhảy khi đang đứng trên mặt đất và trò chơi đang chạy
@@ -168,28 +366,22 @@ function handleJump() {
 
 // Lắng nghe sự kiện nhấn phím (cho PC/Laptop)
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space') {
+  if (e.code === 'Space' && !isSelectingCharacter) {
     handleJump();
   }
 });
 
-// Lắng nghe sự kiện chạm (cho Mobile/Touchscreen)
+// Lắng nghe sự kiện chạm (cho Mobile/Touchscreen) - FIX LỖI NÚT BẤM
 document.addEventListener('touchstart', e => {
-    // 1. Kiểm tra xem người dùng có chạm vào nút bấm không
+    // Kiểm tra xem người dùng có chạm vào nút bấm hoặc thẻ <a> không
     const isButton = e.target.tagName === 'BUTTON' || e.target.closest('a') !== null;
     
-    if (!isButton) {
-        // 2. Nếu không chạm vào nút bấm/link (ví dụ: chạm vào canvas/body)
-        
-        // Ngăn chặn hành vi mặc định của trình duyệt (như cuộn, phóng to/thu nhỏ) 
-        // để kích hoạt hành động nhảy.
+    // Chỉ cho phép nhảy khi game đang chạy và không phải là nút bấm
+    if (!isButton && gameRunning && !isSelectingCharacter) {
         e.preventDefault(); 
-        
-        // Kích hoạt nhảy
         handleJump();
-    } 
-    // Nếu là nút bấm, không gọi preventDefault() để trình duyệt có thể xử lý sự kiện click
-}, { passive: false }); // Giữ { passive: false } để có thể dùng e.preventDefault() cho việc nhảy
+    }
+}, { passive: false }); 
 
 /* ---------------------------- SPAWN ---------------------------- */
 let obstacles = [], items = [], frame = 0, gameSpeed = 7, score = 0, animationId;
@@ -219,6 +411,8 @@ function update(){
   const groundY = getGrassGroundY();
   if(player.y > groundY - player.height){ player.y = groundY - player.height; player.dy = 0; }
 
+  if (frame % 600 === 0) gameSpeed += 0.5; // Tăng tốc độ game
+
   if(frame % 120 === 0) spawnObstacle();
   if(frame % 300 === 0) spawnItem();
 
@@ -245,40 +439,97 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.drawImage(bgImg,0,0,canvas.width,canvas.height);
+  
+  if (isSelectingCharacter) {
+    // Lớp làm mờ (Overlay) khi ở chế độ chọn
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  
+  // Vẽ nhân vật
   ctx.drawImage(playerImg,player.x,player.y,player.width,player.height);
-  obstacles.forEach(obs => ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height));
-  items.forEach(itm => ctx.drawImage(itemImg, itm.x, itm.y, itm.width, itm.height));
+  
+  // Vẽ chướng ngại vật/item (FIX: Bỏ điều kiện "&& gameRunning" để chúng không biến mất khi Pause)
+  if (!isSelectingCharacter) {
+    obstacles.forEach(obs => ctx.drawImage(obstacleImg, obs.x, obs.y, obs.width, obs.height));
+    items.forEach(itm => ctx.drawImage(itemImg, itm.x, itm.y, itm.width, itm.height));
+  }
+
+  // Hiển thị Score/Game Over
   ctx.textAlign="left";
   ctx.font="20px 'Press Start 2P'";
   ctx.fillStyle="black";
-  ctx.fillText("Score: "+score,20,40);
+  
+  // Hiển thị Score chỉ khi game đang chạy và không ở chế độ chọn
+  if (!isSelectingCharacter) {
+    ctx.fillText("Score: "+score,20,40);
+  }
 
   if(gameOver){
     ctx.fillStyle='red';
     ctx.font='40px "Press Start 2P"';
     ctx.textAlign='center';
     ctx.fillText('GAME OVER',canvas.width/2,canvas.height/2);
+    ctx.font='20px "Press Start 2P"';
+    ctx.fillText('Final Score: '+score,canvas.width/2,canvas.height/2 + 50);
   }
 }
 
 /* ---------------------------- LOOP ---------------------------- */
 function loop(){
-  if(gameRunning){ update(); draw(); animationId=requestAnimationFrame(loop); }
+  if(gameRunning){ 
+    update(); 
+    draw(); 
+    animationId=requestAnimationFrame(loop); 
+  }
+  else if (!gameOver && !isSelectingCharacter) {
+    draw(); // Vẽ lại màn hình chờ bình thường hoặc màn hình PAUSE
+  }
 }
 
-/* ---------------------------- BUTTONS ---------------------------- */
-const playBtn = document.getElementById('playBtn');
-const pauseBtn = document.getElementById('pauseBtn');
-const restartBtn = document.getElementById('restartBtn');
-
-playBtn.addEventListener('click', ()=>{
+/* ---------------------------- GÁN SỰ KIỆN BUTTONS ---------------------------- */
+// Logic chơi game
+if (playBtn) playBtn.addEventListener('click', ()=>{
   if(gameOver){ restartGame(); return; }
-  if(!gameRunning){ gameRunning = true; loop(); bgMusic.play().catch(()=>{}); }
+  if(!gameRunning && !isSelectingCharacter){ 
+    gameRunning = true; 
+    loop(); 
+    bgMusic.play().catch(()=>{}); 
+  }
 });
-pauseBtn.addEventListener('click', ()=>{
+
+if (pauseBtn) pauseBtn.addEventListener('click', ()=>{
   gameRunning=false; cancelAnimationFrame(animationId);
+  draw(); // Gọi draw() một lần nữa để vẽ lại màn hình PAUSE với các vật thể cố định
 });
-restartBtn.addEventListener('click',restartGame);
+
+if (restartBtn) restartBtn.addEventListener('click',restartGame);
+
+// Logic chọn nhân vật
+if (selectCharBtn) selectCharBtn.addEventListener('click', ()=>{
+    toggleSelectMode(true); 
+});
+
+if (prevCharBtn) prevCharBtn.addEventListener('click', prevCharacter);
+if (nextCharBtn) nextCharBtn.addEventListener('click', nextCharacter);
+
+if (confirmCharBtn) confirmCharBtn.addEventListener('click', ()=>{
+    // 1. Lưu tên nhân vật tùy chỉnh trước khi thoát
+    const currentConfig = CHARACTER_CONFIGS[currentPlayerIndex];
+    if (currentConfig.src.startsWith('data:image/')) {
+        // Lấy tên đã chỉnh sửa, loại bỏ khoảng trắng thừa, và đảm bảo không để trống
+        let newName = charNameDisplay.textContent.trim();
+        if (newName === "") newName = "Custom Char"; 
+        
+        currentConfig.name = newName; 
+    }
+    
+    // 2. Thoát chế độ chọn
+    toggleSelectMode(false); 
+});
+
+// Logic tải ảnh tùy chọn
+if (loadCustomCharBtn) loadCustomCharBtn.addEventListener('click', loadCustomCharacter);
 
 /* ---------------------------- RESTART ---------------------------- */
 function restartGame(){
@@ -286,11 +537,20 @@ function restartGame(){
   cancelAnimationFrame(animationId);
   player.dy=0; player.speedBoost=0;
   obstacles=[]; items=[]; frame=0; score=0; gameOver=false;
+  gameSpeed = 7; 
   player.y = getGroundObjectY(player.height);
+  
+  toggleSelectMode(false); 
+  
   gameRunning=true;
   loop();
   bgMusic.currentTime=0; bgMusic.play();
 }
+
+// Chạy màn hình chờ khi vừa load trang
+drawInitial();
+updateCharacterDisplay(); 
+loop();
 </script>
 
 </body>
