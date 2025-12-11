@@ -61,7 +61,8 @@
         background-color: #fce4ec; /* Nền nhẹ khi đang chỉnh sửa */
     }
   </style>
-
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
 </head>
 <body>
 
@@ -197,6 +198,13 @@ itemImg.src = 'images/anh3.png';
 let bgImg = new Image();
 bgImg.src = 'images/background.jpg';
 
+// Khai báo cho phần AI: Thân người que
+const STICK_BODY_IMG_SRC = 'images/stick_body.png'; 
+let stickBodyImg = new Image();
+// Tải thân người que ngay từ đầu
+stickBodyImg.crossOrigin = 'anonymous'; 
+stickBodyImg.src = STICK_BODY_IMG_SRC;
+
 /* ---------------------------- GROUND ---------------------------- */
 const GRASS_GROUND_RATIO = 0.6806;
 function getGrassGroundY() { return canvas.height * GRASS_GROUND_RATIO; }
@@ -307,50 +315,140 @@ function toggleSelectMode(activate) {
     draw(); 
 }
 
-/* -------------------------- LOGIC TẢI ẢNH TÙY CHỌN -------------------------- */
-function loadCustomCharacter() {
+/* -------------------------- LOGIC TẢI ẢNH TÙY CHỌN (VỚI FACE DETECTION) -------------------------- */
+
+async function processCustomCharacter(imgElement) {
+    // 1. Tải mô hình BlazeFace
+    const faceModel = await blazeface.load();
+    const predictions = await faceModel.estimateFaces(imgElement);
+
+    if (predictions.length === 0) {
+        alert("Không tìm thấy khuôn mặt nào trong ảnh. Vui lòng thử ảnh khác.");
+        return null;
+    }
+
+    // Chọn khuôn mặt lớn nhất (thường là khuôn mặt chính)
+    let bestPrediction = predictions[0];
+    
+    // Tọa độ khuôn mặt được phát hiện
+    const start = bestPrediction.topLeft;
+    const end = bestPrediction.bottomRight;
+    const size = [end[0] - start[0], end[1] - start[1]]; 
+
+    // Tính toán khung vuông để cắt (Crop): Lấy chiều lớn nhất làm kích thước cạnh
+    const faceSize = Math.max(size[0], size[1]);
+
+    // Thêm một chút padding (10%) để khuôn mặt không bị quá sát
+    const padding = faceSize * 0.1; 
+    const finalSize = faceSize + 2 * padding;
+
+    // Tọa độ cắt
+    const cropX = start[0] - padding;
+    const cropY = start[1] - padding;
+
+    // BƯỚC 1: CẮT KHUÔN MẶT
+    const faceCanvas = document.createElement('canvas');
+    faceCanvas.width = finalSize;
+    faceCanvas.height = finalSize;
+    const faceCtx = faceCanvas.getContext('2d');
+
+    // Cắt và vẽ khuôn mặt vào canvas (đảm bảo không bị lỗi nếu cropX/Y < 0)
+    faceCtx.drawImage(
+        imgElement,
+        Math.max(0, cropX), Math.max(0, cropY), finalSize, finalSize, 
+        0, 0, finalSize, finalSize        
+    );
+    
+    // BƯỚC 2: GHÉP VỚI THÂN NGƯỜI QUE
+    const finalCanvas = document.createElement('canvas');
+    const finalCharSize = 80; // Kích thước nhân vật game
+    finalCanvas.width = finalCharSize;
+    finalCanvas.height = finalCharSize;
+    const finalCtx = finalCanvas.getContext('2d');
+
+    // Đảm bảo thân người que đã được tải
+    if (stickBodyImg.complete) {
+        // 1. Vẽ thân người que (dùng làm nền)
+        finalCtx.drawImage(stickBodyImg, 0, 0, finalCharSize, finalCharSize); 
+    } else {
+        // Nếu chưa tải xong, vẽ một hình người que đơn giản thay thế
+        finalCtx.fillStyle = '#000000';
+        finalCtx.fillRect(finalCharSize/2 - 5, finalCharSize/2, 10, finalCharSize/2);
+        finalCtx.beginPath();
+        finalCtx.arc(finalCharSize/2, finalCharSize/4, finalCharSize*0.15, 0, Math.PI * 2);
+        finalCtx.fill();
+    }
+
+    // 2. Vẽ khuôn mặt đã cắt lên trên cùng
+    // Điều chỉnh vị trí của khuôn mặt để nó nằm đúng vị trí đầu
+    const faceDrawSize = finalCharSize * 0.45; // Khuôn mặt chiếm 45% kích thước
+    const faceDrawX = finalCharSize / 2 - faceDrawSize / 2;
+    const faceDrawY = finalCharSize * 0.05; 
+
+    finalCtx.drawImage(faceCanvas, faceDrawX, faceDrawY, faceDrawSize, faceDrawSize);
+
+    // Chuyển canvas cuối cùng thành Data URL (giống như ảnh PNG)
+    return finalCanvas.toDataURL('image/png');
+}
+
+async function loadCustomCharacter() {
     const file = charFileInput.files[0];
-    const defaultName = "Custom Char"; // Tên mặc định
+    const defaultName = "Custom Char Face";
 
     if (!file) {
         alert("Vui lòng chọn một file ảnh trước.");
         return;
     }
+    
+    // Kiểm tra và thông báo nếu thư viện AI chưa tải xong
+    if (typeof blazeface === 'undefined') {
+        alert("Hệ thống AI đang tải. Vui lòng chờ một chút và thử lại.");
+        return;
+    }
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-        const customSrc = e.target.result;
-        
-        // 1. Xóa nhân vật tùy chọn cũ (dựa trên source là Data URL)
-        const lastIndex = CHARACTER_CONFIGS.length - 1;
-        if (CHARACTER_CONFIGS[lastIndex] && CHARACTER_CONFIGS[lastIndex].src.startsWith('data:image/')) {
-            CHARACTER_CONFIGS.pop();
-        }
+    reader.onload = async function(e) {
+        // Tải ảnh dưới dạng đối tượng Image HTML
+        const uploadedImg = new Image();
+        uploadedImg.onload = async () => {
+            try {
+                // Gọi hàm xử lý ảnh AI và Canvas
+                const processedSrc = await processCustomCharacter(uploadedImg); 
+                
+                if (processedSrc) {
+                    // Xóa nhân vật tùy chọn cũ 
+                    const lastIndex = CHARACTER_CONFIGS.length - 1;
+                    if (CHARACTER_CONFIGS[lastIndex] && CHARACTER_CONFIGS[lastIndex].src.startsWith('data:image/')) {
+                        CHARACTER_CONFIGS.pop();
+                    }
 
-        // 2. Thêm nhân vật tùy chọn mới vào cuối danh sách
-        CHARACTER_CONFIGS.push({ 
-            name: defaultName, 
-            src: customSrc, 
-            width: 80, 
-            height: 80
-        });
+                    // Thêm nhân vật mới đã được xử lý
+                    CHARACTER_CONFIGS.push({ 
+                        name: defaultName, 
+                        src: processedSrc, // Sử dụng ảnh đã được xử lý
+                        width: 80, 
+                        height: 80
+                    });
 
-        // 3. Chuyển ngay đến nhân vật mới tải lên
-        currentPlayerIndex = CHARACTER_CONFIGS.length - 1;
-        updateCharacterDisplay();
-        
-        // Chuyển sang chế độ chọn nhân vật
-        toggleSelectMode(true); 
-        
-        // Tự động focus vào DIV để người dùng gõ
-        if (charNameDisplay) {
-            charNameDisplay.focus(); 
-            // Chọn toàn bộ văn bản để người dùng gõ đè lên dễ dàng
-            document.execCommand('selectAll', false, null);
-        }
+                    // Chuyển đến nhân vật mới
+                    currentPlayerIndex = CHARACTER_CONFIGS.length - 1;
+                    updateCharacterDisplay();
+                    toggleSelectMode(true); 
+                    
+                    if (charNameDisplay) {
+                        charNameDisplay.focus(); 
+                        document.execCommand('selectAll', false, null);
+                    }
+                }
+            } catch (error) {
+                alert("Lỗi khi xử lý ảnh. Vui lòng kiểm tra console (F12) để xem chi tiết.");
+                console.error("Xử lý ảnh lỗi:", error);
+            }
+        };
+        uploadedImg.src = e.target.result;
     };
 
-    reader.readAsDataURL(file); // Đọc file ảnh thành Data URL
+    reader.readAsDataURL(file); 
 }
 
 /* ---------------------------- CONTROLS ---------------------------- */
@@ -519,7 +617,7 @@ if (confirmCharBtn) confirmCharBtn.addEventListener('click', ()=>{
     if (currentConfig.src.startsWith('data:image/')) {
         // Lấy tên đã chỉnh sửa, loại bỏ khoảng trắng thừa, và đảm bảo không để trống
         let newName = charNameDisplay.textContent.trim();
-        if (newName === "") newName = "Custom Char"; 
+        if (newName === "") newName = "Custom Char Face"; 
         
         currentConfig.name = newName; 
     }
